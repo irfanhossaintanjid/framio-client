@@ -67,9 +67,10 @@ export function HeroCarousel() {
 
   return (
     <section
+      id="home-hero"
       aria-label="Featured creative studios"
       aria-roledescription="carousel"
-      className="relative isolate mx-auto mt-10 h-[min(72vh,560px)] min-h-[420px] w-full max-w-7xl overflow-hidden bg-[#071521] text-white"
+      className="relative isolate mx-auto mt-10 h-[min(72vh,560px)] min-h-[420px] w-full overflow-hidden bg-[#071521] text-white"
     >
       <div
         ref={swiperContainerRef}

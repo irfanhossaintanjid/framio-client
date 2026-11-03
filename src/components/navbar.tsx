@@ -37,7 +37,7 @@ import {
 
 
 const navigationLinks = [
-  { label: "Home", href: "#home" },
+  { label: "Home", href: "#home-hero" },
   { label: "Explore Studios", href: "#studios" },
   { label: "How It Works", href: "#how-it-works" },
   { label: "About Us", href: "#about" },

@@ -77,10 +77,11 @@ const guarantees: Guarantee[] = [
 export function AboutUs() {
   return (
     <>
+    <div className="bg-[#dae8f0] dark:*:bg-[#0b1e2c]">
       <section
       id="how-it-works"
         aria-labelledby="booking-works-heading"
-        className="bg-background py-16 sm:py-20 lg:py-24"
+        className="pt-5 py-16 sm:py-20 lg:py-24"
       >
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           <header className="mx-auto max-w-3xl text-center">
@@ -130,13 +131,14 @@ export function AboutUs() {
           </ol>
         </div>
       </section>
+      </div>
 
       <section
       id = "about"
         aria-labelledby="host-guarantee-heading"
-        className=" text-white sm:py-20 lg:py-24"
+        className="text-white sm:py-20 lg:py-24"
       >
-        <div className="mx-auto bg-[#071521] py-20 rounded-xl w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-7xl rounded-xl bg-[#071521] px-4 py-20 text-white sm:px-6 lg:px-8 dark:bg-[#102a43]">
           <header className="max-w-3xl">
             <p className="text-[0.6875rem] font-bold tracking-[0.14em] text-[#19a7ce] uppercase">
               Built for Professional Productions
