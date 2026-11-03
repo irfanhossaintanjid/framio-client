@@ -83,6 +83,7 @@
   --background: var(--brand-ice);
   --foreground: var(--brand-navy);
   --card: var(--brand-white);
+  --footer: var(--brand-navy);
   --card-foreground: var(--brand-navy);
   --card-hover: var(--brand-surface);
   --popover: var(--brand-white);
@@ -131,6 +132,7 @@
   --background: var(--brand-midnight);
   --foreground: var(--brand-ice);
   --card: var(--brand-navy);
+  --footer: var(--brand-navy);
   --card-foreground: var(--brand-ice);
   --card-hover: var(--brand-card-hover);
   --popover: var(--brand-surface-dark);

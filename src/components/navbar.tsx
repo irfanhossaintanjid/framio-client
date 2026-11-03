@@ -1,5 +1,6 @@
 "use client"
-
+import { NavbarUser } from "@/lib/types/page"
+import { ResponsiveNavbarProps } from "@/lib/types/page"
 import Image from "next/image"
 import { useState } from "react"
 import {
@@ -31,14 +32,9 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 
-export type NavbarUser = {
-  name: string
-  avatarUrl?: string
-}
 
-type ResponsiveNavbarProps =
-  | { user?: null; onLogout?: never }
-  | { user: NavbarUser; onLogout: () => void }
+
+
 
 const navigationLinks = [
   { label: "Home", href: "#home" },
@@ -73,7 +69,7 @@ function UserAvatar({ user, size = "default" }: { user: NavbarUser; size?: "defa
   )
 }
 
-function ThemeToggle() {
+function ThemeToggle({ className }: { className?: string }) {
   function toggleTheme() {
     const root = document.documentElement
     const isDark = !root.classList.contains("dark")
@@ -88,6 +84,7 @@ function ThemeToggle() {
       type="button"
       variant="ghost"
       size="icon"
+      className={className}
       onClick={toggleTheme}
       aria-label="Toggle color theme"
       title="Toggle color theme"
@@ -234,8 +231,11 @@ function MobileMenu({
   const [open, setOpen] = useState(false)
 
   return (
+       
     <Sheet open={open} onOpenChange={setOpen}>
+       <ThemeToggle className="mr-2" />
       <SheetTrigger
+      
         render={
           <button
             type="button"
@@ -243,6 +243,7 @@ function MobileMenu({
             aria-label="Open navigation menu"
           />
         }
+        
       >
         <MenuIcon aria-hidden="true" />
       </SheetTrigger>
@@ -255,9 +256,10 @@ function MobileMenu({
         }
       >
         <SheetHeader>
+          
           <SheetTitle>{tablet ? "Framio navigation" : "Explore Framio"}</SheetTitle>
           <SheetDescription>
-            Find the right creative space for your next project.
+            Find the right creative space.
           </SheetDescription>
         </SheetHeader>
         <nav
@@ -268,21 +270,17 @@ function MobileMenu({
             activeLink={activeLink}
             onNavigate={onNavigate}
             mobile
-            onClose={() => setOpen(false)}
+            onClose={() => setOpen(false)}  
           />
         </nav>
         {!tablet ? (
           <>
-            <div className="mx-4 border-t border-border" />
-            <div className="flex items-center px-4 py-3">
-              <ThemeToggle />
-              <span className="ml-2 text-sm text-muted-foreground">
-                Appearance
-              </span>
-            </div>
+            <div className="mx-4 border border-t " />
+            
           </>
         ) : null}
-        <div className="px-4 pb-5">
+        <div className="px-4 pb-5 mt-4">
+
           <MobileAccountLinks
             user={user}
             onLogout={onLogout}
@@ -294,7 +292,7 @@ function MobileMenu({
   )
 }
 
-export function ResponsiveNavbar({
+export function Navbar({
   user,
   onLogout,
 }: ResponsiveNavbarProps) {
