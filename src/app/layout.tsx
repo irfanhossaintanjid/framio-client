@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { SiteChrome } from "@/components/site-chrome"
 
 
 import { Toaster } from "@/components/ui/toast";
+import { AppChrome } from "@/components/app-chrome";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,7 +42,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        <SiteChrome>{children}</SiteChrome>
+        <AppChrome>{children}</AppChrome>
         <Toaster />
       </body>
     </html>

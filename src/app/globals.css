@@ -124,6 +124,7 @@
   --sidebar-accent-foreground: var(--brand-navy);
   --sidebar-border: var(--brand-border);
   --sidebar-ring: var(--brand-ocean);
+  
   color-scheme: light;
 }
 
