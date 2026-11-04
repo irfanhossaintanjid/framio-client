@@ -119,7 +119,7 @@ export function RegisterForm() {
       ) : null}
       <section
         aria-labelledby="register-heading"
-        className="w-full max-w-[380px] overflow-hidden rounded-[20px] border border-border bg-card shadow-[0_16px_48px_-20px_rgba(16,42,67,0.28)]"
+        className="w-full max-w-[420px] overflow-hidden rounded-[20px] border border-border bg-card shadow-[0_16px_48px_-20px_rgba(16,42,67,0.28)]"
       >
         <div className="px-5 pb-6 pt-5 sm:px-6 sm:pb-7 sm:pt-6">
           <div className="flex items-center justify-between gap-2">
