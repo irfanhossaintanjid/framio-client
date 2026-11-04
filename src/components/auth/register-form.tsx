@@ -9,9 +9,11 @@ import {
   EyeOffIcon,
   ImageIcon,
   LockKeyholeIcon,
+  LoaderCircleIcon,
   LogInIcon,
   MailIcon,
   UserRoundIcon,
+  XIcon,
 } from "lucide-react"
 import { FaGoogle } from "react-icons/fa6"
 
@@ -37,6 +39,7 @@ export function RegisterForm() {
   const [photoUrl, setPhotoUrl] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [notice, setNotice] = useState("")
 
@@ -66,7 +69,7 @@ export function RegisterForm() {
     return !error
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setNotice("")
 
@@ -76,6 +79,9 @@ export function RegisterForm() {
 
     if (!nameIsValid || !emailIsValid || !passwordIsValid) return
 
+    setIsSubmitting(true)
+    await new Promise((resolve) => window.setTimeout(resolve, 450))
+    setIsSubmitting(false)
     setNotice(
       "Account registration is not connected yet. Please try again later.",
     )
@@ -94,7 +100,23 @@ export function RegisterForm() {
   }
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-background px-3 py-6 text-foreground sm:px-6 sm:py-10">
+    <div className="flex min-h-dvh items-center justify-center bg-background px-3 py-6 text-foreground sm:px-6 sm:py-10">
+      {notice ? (
+        <div
+          className="fixed top-4 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-[380px] -translate-x-1/2 items-start gap-3 rounded-xl border border-destructive/30 bg-card px-4 py-3 text-xs leading-relaxed text-destructive shadow-lg"
+          role="alert"
+        >
+          <span className="flex-1">{notice}</span>
+          <button
+            type="button"
+            onClick={() => setNotice("")}
+            aria-label="Dismiss notification"
+            className="shrink-0 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <XIcon className="size-3.5" aria-hidden="true" />
+          </button>
+        </div>
+      ) : null}
       <section
         aria-labelledby="register-heading"
         className="w-full max-w-[380px] overflow-hidden rounded-[20px] border border-border bg-card shadow-[0_16px_48px_-20px_rgba(16,42,67,0.28)]"
@@ -124,15 +146,6 @@ export function RegisterForm() {
             Book verified production stages, sound studios, and creative lofts
             across the country with instant direct clearance.
           </p>
-
-          {notice ? (
-            <div
-              className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs leading-relaxed text-destructive"
-              role="alert"
-            >
-              {notice}
-            </div>
-          ) : null}
 
           <button
             type="button"
@@ -383,14 +396,26 @@ export function RegisterForm() {
 
             <button
               type="submit"
-              disabled={!passwordIsValid}
+              disabled={!passwordIsValid || isSubmitting}
               className="group flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-md disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
             >
-              Register as Creator
-              <ArrowRightIcon
-                className="size-3.5 transition-transform group-hover:translate-x-0.5"
-                aria-hidden="true"
-              />
+                {isSubmitting ? (
+                  <>
+                    Creating account
+                    <LoaderCircleIcon
+                      className="size-3.5 animate-spin"
+                      aria-hidden="true"
+                    />
+                  </>
+                ) : (
+                  <>
+                    Register as Creator
+                    <ArrowRightIcon
+                      className="size-3.5 transition-transform group-hover:translate-x-0.5"
+                      aria-hidden="true"
+                    />
+                  </>
+                )}
             </button>
           </form>
         </div>
@@ -409,6 +434,6 @@ export function RegisterForm() {
           </Link>
         </div>
       </section>
-    </main>
+    </div>
   )
 }

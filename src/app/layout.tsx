@@ -42,8 +42,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        <SiteChrome />
-        <main className="flex-1">{children}</main>
+        <SiteChrome>{children}</SiteChrome>
         <Toaster />
       </body>
     </html>

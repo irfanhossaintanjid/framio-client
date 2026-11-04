@@ -1,18 +1,20 @@
 "use client"
 
 import { usePathname } from "next/navigation"
+import type { ReactNode } from "react"
 
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 
-export function SiteChrome() {
+export function SiteChrome({ children }: { children: ReactNode }) {
   const pathname = usePathname()
-  if (pathname === "/register") return null
+  const isRegisterPage = pathname === "/register"
 
   return (
     <>
-      <Navbar />
-      <Footer />
+      {!isRegisterPage ? <Navbar /> : null}
+      <main className="flex-1">{children}</main>
+      {!isRegisterPage ? <Footer /> : null}
     </>
   )
 }
