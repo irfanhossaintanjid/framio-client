@@ -1,8 +1,17 @@
+
 "use client"
-import { NavbarUser } from "@/lib/types/page"
-import { ResponsiveNavbarProps } from "@/lib/types/page"
+
+import type {
+  NavbarUser,
+  ResponsiveNavbarProps,
+} from "@/lib/types/page"
+import { authClient } from "@/lib/auth-client"
+
 import Image from "next/image"
-import { useState } from "react"
+import Link from "next/link"
+import { useEffect, useState } from "react"
+import { usePathname } from "next/navigation"
+
 import {
   CalendarDaysIcon,
   LayoutDashboardIcon,
@@ -13,8 +22,17 @@ import {
   SunIcon,
 } from "lucide-react"
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button, buttonVariants } from "@/components/ui/button"
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar"
+
+import {
+  Button,
+  buttonVariants,
+} from "@/components/ui/button"
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +41,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+
 import {
   Sheet,
   SheetContent,
@@ -32,27 +51,50 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 
-
-
-
+// ==========================================
+// Navigation Configuration
+// ==========================================
 
 const navigationLinks = [
-  { label: "Home", href: "/" },
-  { label: "Explore Studios", href: "#studios" },
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "About Us", href: "#about" },
+  { label: "Home", href: "/#home" },
+  { label: "Explore Studios", href: "/studios" },
+  { label: "How It Works", href: "/#how-it-works" },
+  { label: "About Us", href: "/#about" },
 ]
 
 const accountLinks = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboardIcon },
-  { label: "Add New Studio", href: "/add-studio", icon: PlusIcon },
-  { label: "My Studio Listings", href: "/my-listings", icon: LayoutDashboardIcon },
-  { label: "My Bookings", href: "/my-bookings", icon: CalendarDaysIcon },
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: LayoutDashboardIcon,
+  },
+  {
+    label: "Add New Studio",
+    href: "/add-studio",
+    icon: PlusIcon,
+  },
+  {
+    label: "My Studio Listings",
+    href: "/my-listings",
+    icon: LayoutDashboardIcon,
+  },
+  {
+    label: "My Bookings",
+    href: "/my-bookings",
+    icon: CalendarDaysIcon,
+  },
 ]
 
+// ==========================================
+// Helper Functions
+// ==========================================
+
 function getInitials(name: string) {
-  return name
-    .trim()
+  const cleanName = name.trim()
+
+  if (!cleanName) return "U"
+
+  return cleanName
     .split(/\s+/)
     .slice(0, 2)
     .map((part) => part[0])
@@ -60,23 +102,109 @@ function getInitials(name: string) {
     .toUpperCase()
 }
 
-function UserAvatar({ user, size = "default" }: { user: NavbarUser; size?: "default" | "lg" }) {
+function isActiveLink(
+  href: string,
+  pathname: string,
+  activeHash: string
+) {
+  // Homepage section links
+  if (href.startsWith("/#")) {
+    return (
+      pathname === "/" &&
+      activeHash === href.substring(1)
+    )
+  }
+
+  // Home
+  if (href === "/") {
+    return pathname === "/" && !activeHash
+  }
+
+  // Explore Studios and nested studio details
+  if (href === "/studios") {
+    return (
+      pathname === "/studios" ||
+      pathname.startsWith("/studios/")
+    )
+  }
+
+  // Other routes
+  return (
+    pathname === href ||
+    pathname.startsWith(`${href}/`)
+  )
+}
+
+// ==========================================
+// User Avatar
+// ==========================================
+
+function UserAvatar({
+  user,
+  size = "default",
+}: {
+  user: NavbarUser
+  size?: "default" | "lg"
+}) {
   return (
     <Avatar size={size}>
-      {user.avatarUrl ? <AvatarImage src={user.avatarUrl} alt={user.name} /> : null}
-      <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+      {user.avatarUrl ? (
+        <AvatarImage
+          src={user.avatarUrl}
+          alt={user.name}
+        />
+      ) : null}
+
+      <AvatarFallback>
+        {getInitials(user.name)}
+      </AvatarFallback>
     </Avatar>
   )
 }
 
-function ThemeToggle({ className }: { className?: string }) {
+// ==========================================
+// Theme Toggle
+// ==========================================
+
+function ThemeToggle({
+  className,
+}: {
+  className?: string
+}) {
+  const [isDark, setIsDark] = useState(false)
+
+  // Read the saved theme when the component mounts
+  useEffect(() => {
+    const root = document.documentElement
+    const savedTheme = localStorage.getItem("framio-theme")
+
+    const dark =
+      savedTheme === "dark" ||
+      (!savedTheme && root.classList.contains("dark"))
+
+    root.classList.toggle("dark", dark)
+    root.style.colorScheme = dark ? "dark" : "light"
+
+   
+  }, [])
+
   function toggleTheme() {
     const root = document.documentElement
-    const isDark = !root.classList.contains("dark")
+    const nextTheme = !isDark
 
-    window.localStorage.setItem("framio-theme", isDark ? "dark" : "light")
-    root.classList.toggle("dark", isDark)
-    root.style.colorScheme = isDark ? "dark" : "light"
+    root.classList.toggle("dark", nextTheme)
+    root.style.colorScheme = nextTheme ? "dark" : "light"
+
+    try {
+      localStorage.setItem(
+        "framio-theme",
+        nextTheme ? "dark" : "light"
+      )
+    } catch {
+      // Theme still works even if localStorage is unavailable.
+    }
+
+    setIsDark(nextTheme)
   }
 
   return (
@@ -86,22 +214,35 @@ function ThemeToggle({ className }: { className?: string }) {
       size="icon"
       className={className}
       onClick={toggleTheme}
-      aria-label="Toggle color theme"
-      title="Toggle color theme"
+      aria-label={
+        isDark ? "Switch to light theme" : "Switch to dark theme"
+      }
+      title={
+        isDark ? "Switch to light theme" : "Switch to dark theme"
+      }
     >
-      <SunIcon className="hidden dark:block" aria-hidden="true" />
-      <MoonIcon className="dark:hidden" aria-hidden="true" />
+      {isDark ? (
+        <SunIcon aria-hidden="true" />
+      ) : (
+        <MoonIcon aria-hidden="true" />
+      )}
     </Button>
   )
 }
 
+// ==========================================
+// Navigation Links
+// ==========================================
+
 function NavigationLinks({
-  activeLink,
+  pathname,
+  activeHash,
   onNavigate,
   mobile = false,
   onClose,
 }: {
-  activeLink: string
+  pathname: string
+  activeHash: string
   onNavigate: (href: string) => void
   mobile?: boolean
   onClose?: () => void
@@ -109,49 +250,46 @@ function NavigationLinks({
   return (
     <>
       {navigationLinks.map((link) => {
-        const active = activeLink === link.href
+        const active = isActiveLink(
+          link.href,
+          pathname,
+          activeHash
+        )
+
         const className = mobile
           ? "flex min-h-12 items-center rounded-lg px-3 text-base font-medium transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
           : "flex h-16 items-center border-b-2 px-1 text-sm font-medium transition-colors"
 
-        if (mobile) {
-          return (
-            <a
-              key={link.href}
-              href={link.href}
-              onClick={() => {
-                onNavigate(link.href)
-                onClose?.()
-              }}
-              aria-current={active ? "page" : undefined}
-              className={`${className} ${
-                active ? "bg-secondary text-link" : "text-muted-foreground"
-              }`}
-            >
-              {link.label}
-            </a>
-          )
-        }
-
         return (
-          <a
+          <Link
             key={link.href}
             href={link.href}
-            onClick={() => onNavigate(link.href)}
+            onClick={() => {
+              onNavigate(link.href)
+              onClose?.()
+            }}
             aria-current={active ? "page" : undefined}
             className={`${className} ${
               active
-                ? "border-link text-link"
-                : "border-transparent text-muted-foreground hover:text-link"
+                ? mobile
+                  ? "bg-secondary text-link"
+                  : "border-link text-link"
+                : mobile
+                  ? "text-muted-foreground"
+                  : "border-transparent text-muted-foreground hover:text-link"
             }`}
           >
             {link.label}
-          </a>
+          </Link>
         )
       })}
     </>
   )
 }
+
+// ==========================================
+// Mobile Account Links
+// ==========================================
 
 function MobileAccountLinks({
   user,
@@ -162,91 +300,130 @@ function MobileAccountLinks({
   onLogout?: () => void
   onClose: () => void
 }) {
+  // Unauthenticated State
   if (!user) {
     return (
       <div className="flex flex-col gap-2">
-        <a
+        <Link
           href="/login"
           onClick={onClose}
           className="inline-flex h-10 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-secondary"
         >
-          Sign In
-        </a>
-        <a
+          Login
+        </Link>
+
+        <Link
           href="/register"
           onClick={onClose}
           className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-hover"
         >
           Register
-        </a>
+        </Link>
       </div>
     )
   }
 
+  // Authenticated State
   return (
     <div className="flex flex-col gap-1">
+      {/* User Information */}
       <div className="mb-2 flex items-center gap-3 px-3 py-2">
         <UserAvatar user={user} size="lg" />
-        <span className="font-medium text-foreground">{user.name}</span>
+
+        <div className="min-w-0">
+          <p className="truncate font-medium text-foreground">
+            {user.name}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            My Account
+          </p>
+        </div>
       </div>
+
+      <div className="mb-2 border-t border-border" />
+
+      {/* Account Navigation */}
       {accountLinks.map(({ label, href, icon: Icon }) => (
-        <a
+        <Link
           key={href}
           href={href}
           onClick={onClose}
           className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
         >
-          <Icon className="size-4" aria-hidden="true" />
+          <Icon
+            className="size-4"
+            aria-hidden="true"
+          />
+
           {label}
-        </a>
+        </Link>
       ))}
+
+      <div className="my-2 border-t border-border" />
+
+      {/* Logout */}
       <button
         type="button"
         onClick={() => {
-          onLogout?.()
           onClose()
+          onLogout?.()
         }}
         className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
       >
-        <LogOutIcon className="size-4" aria-hidden="true" />
+        <LogOutIcon
+          className="size-4"
+          aria-hidden="true"
+        />
+
         Logout
       </button>
     </div>
   )
 }
 
+// ==========================================
+// Mobile / Tablet Menu
+// ==========================================
+
 function MobileMenu({
   user,
   onLogout,
-  activeLink,
+  pathname,
+  activeHash,
   onNavigate,
   tablet = false,
 }: {
   user: NavbarUser | null | undefined
   onLogout?: () => void
-  activeLink: string
+  pathname: string
+  activeHash: string
   onNavigate: (href: string) => void
   tablet?: boolean
 }) {
   const [open, setOpen] = useState(false)
 
+  function closeMenu() {
+    setOpen(false)
+  }
+
   return (
-       
     <Sheet open={open} onOpenChange={setOpen}>
-       <ThemeToggle className="mr-2" />
       <SheetTrigger
-      
         render={
           <button
             type="button"
-            className={buttonVariants({ variant: "ghost", size: "icon" })}
+            className={buttonVariants({
+              variant: "ghost",
+              size: "icon",
+            })}
             aria-label="Open navigation menu"
+            aria-expanded={open}
           />
         }
-        
       >
         <MenuIcon aria-hidden="true" />
       </SheetTrigger>
+
       <SheetContent
         side={tablet ? "top" : "right"}
         className={
@@ -256,35 +433,39 @@ function MobileMenu({
         }
       >
         <SheetHeader>
-          
-          <SheetTitle>{tablet ? "Framio navigation" : "Explore Framio"}</SheetTitle>
+          <SheetTitle>
+            {tablet ? "Framio Navigation" : "Explore Framio"}
+          </SheetTitle>
+
           <SheetDescription>
             Find the right creative space.
           </SheetDescription>
         </SheetHeader>
+
+        {/* Main Navigation */}
         <nav
-          aria-label={tablet ? "Tablet navigation" : "Mobile navigation"}
+          aria-label={
+            tablet ? "Tablet navigation" : "Mobile navigation"
+          }
           className="flex flex-col gap-1 px-4 pb-4"
         >
           <NavigationLinks
-            activeLink={activeLink}
+            pathname={pathname}
+            activeHash={activeHash}
             onNavigate={onNavigate}
             mobile
-            onClose={() => setOpen(false)}  
+            onClose={closeMenu}
           />
         </nav>
-        {!tablet ? (
-          <>
-            <div className="mx-4 border border-t " />
-            
-          </>
-        ) : null}
-        <div className="px-4 pb-5 mt-4">
 
+        <div className="mx-4 border-t border-border" />
+
+        {/* Account Navigation */}
+        <div className="mt-4 px-4 pb-5">
           <MobileAccountLinks
             user={user}
             onLogout={onLogout}
-            onClose={() => setOpen(false)}
+            onClose={closeMenu}
           />
         </div>
       </SheetContent>
@@ -292,55 +473,107 @@ function MobileMenu({
   )
 }
 
+// ==========================================
+// Main Navbar
+// ==========================================
+
 export function Navbar({
-  user,
+  
   onLogout,
 }: ResponsiveNavbarProps) {
-  const [activeLink, setActiveLink] = useState("#home")
+  const pathname = usePathname()
+   const {data:session} = authClient.useSession()
+
+   const user = session?.user;
+
+  const [activeHash, setActiveHash] = useState("")
+
+  // Sync hash when the route or browser history changes
+  useEffect(() => {
+    function updateHash() {
+      setActiveHash(window.location.hash)
+    }
+
+    updateHash()
+
+    window.addEventListener("hashchange", updateHash)
+    window.addEventListener("popstate", updateHash)
+
+    return () => {
+      window.removeEventListener("hashchange", updateHash)
+      window.removeEventListener("popstate", updateHash)
+    }
+  }, [pathname])
+
+  // Update active navigation after clicking a link
+  function handleNavigate(href: string) {
+    const hashIndex = href.indexOf("#")
+
+    setActiveHash(
+      hashIndex !== -1 ? href.substring(hashIndex) : ""
+    )
+  }
 
   return (
     <header
-      id="home"
       className="sticky top-0 z-40 border-b border-border/70 bg-background/95 backdrop-blur"
     >
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <a
-          href="#home"
-          onClick={() => setActiveLink("#home")}
+
+        {/* ==================================
+            Brand Logo
+        ================================== */}
+
+        <Link
+          href="/"
+          onClick={() => setActiveHash("")}
           className="flex shrink-0 items-center gap-2.5 rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
           aria-label="Framio home"
         >
           <Image
             src="/images/framio-logo-badge-180.png"
-            alt=""
+            alt="Framio logo"
             width={40}
             height={40}
             className="size-10 rounded-full object-contain"
             priority
           />
+
           <span className="hidden flex-col leading-tight md:flex">
             <span className="font-heading text-lg font-semibold tracking-tight">
               Framio
             </span>
+
             <span className="text-[0.65rem] font-medium tracking-wide text-muted-foreground uppercase">
               Creative Studios
             </span>
           </span>
-        </a>
+        </Link>
+
+        {/* ==================================
+            Desktop Navigation
+        ================================== */}
 
         <nav
           aria-label="Main navigation"
           className="hidden h-full items-center gap-6 lg:flex xl:gap-8"
         >
           <NavigationLinks
-            activeLink={activeLink}
-            onNavigate={setActiveLink}
+            pathname={pathname}
+            activeHash={activeHash}
+            onNavigate={handleNavigate}
           />
         </nav>
 
+        {/* ==================================
+            Desktop Account Section
+        ================================== */}
+
         <div className="hidden items-center gap-2 lg:flex">
           <ThemeToggle />
+
           {user ? (
+            /* Authenticated State */
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
@@ -355,26 +588,35 @@ export function Navbar({
                 }
               >
                 <UserAvatar user={user} />
+
                 <span className="max-w-32 truncate text-sm font-medium">
                   {user.name}
                 </span>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+
+              <DropdownMenuContent
+                align="end"
+                className="w-56"
+              >
                 <DropdownMenuLabel className="truncate">
                   {user.name}
                 </DropdownMenuLabel>
+
                 <DropdownMenuSeparator />
+
                 {accountLinks.map(({ label, href, icon: Icon }) => (
                   <DropdownMenuItem
                     key={href}
                     nativeButton={false}
-                    render={<a href={href} />}
+                    render={<Link href={href} />}
                   >
                     <Icon aria-hidden="true" />
                     {label}
                   </DropdownMenuItem>
                 ))}
+
                 <DropdownMenuSeparator />
+
                 <DropdownMenuItem
                   variant="destructive"
                   onClick={onLogout}
@@ -385,39 +627,65 @@ export function Navbar({
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
+            /* Unauthenticated State */
             <>
-              <a
+              <Link
                 href="/login"
-                className={buttonVariants({ variant: "ghost", size: "sm" })}
+                className={buttonVariants({
+                  variant: "ghost",
+                  size: "sm",
+                })}
               >
-                Sign In
-              </a>
-              <a href="/register" className={buttonVariants({ size: "sm" })}>
+                Login
+              </Link>
+
+              <Link
+                href="/register"
+                className={buttonVariants({
+                  size: "sm",
+                })}
+              >
                 Register
-              </a>
+              </Link>
             </>
           )}
         </div>
 
+        {/* ==================================
+            Tablet Navigation
+            768px - 1023px
+        ================================== */}
+
         <div className="hidden items-center gap-2 md:flex lg:hidden">
           <ThemeToggle />
+
           <MobileMenu
             user={user}
             onLogout={onLogout}
-            activeLink={activeLink}
-            onNavigate={setActiveLink}
+            pathname={pathname}
+            activeHash={activeHash}
+            onNavigate={handleNavigate}
             tablet
           />
         </div>
 
-        <div className="flex md:hidden">
+        {/* ==================================
+            Mobile Navigation
+            Below 768px
+        ================================== */}
+
+        <div className="flex items-center gap-1 md:hidden">
+          <ThemeToggle />
+
           <MobileMenu
             user={user}
             onLogout={onLogout}
-            activeLink={activeLink}
-            onNavigate={setActiveLink}
+            pathname={pathname}
+            activeHash={activeHash}
+            onNavigate={handleNavigate}
           />
         </div>
+
       </div>
     </header>
   )

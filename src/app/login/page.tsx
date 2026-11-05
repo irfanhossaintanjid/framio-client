@@ -33,8 +33,14 @@ export default function LoginPage() {
     e.preventDefault();
 
     if (loading) {
-      return;
-    }
+    return (
+       
+  <div className=" skeleton mx-auto flex h-52 max-w-6xl items-center justify-center">
+    <span className="loading loading-spinner w-16 text-gray-500" />
+  </div>
+    );
+  }
+
 
     const form = e.currentTarget;
     const email = (form.elements.namedItem("email") as HTMLInputElement).value;
