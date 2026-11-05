@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/navbar";
+import { ThemeInitializer } from "@/components/theme-initializer";
 
 import { Toaster } from "@/components/ui/toast";
 import { Footer } from "@/components/footer";
+import { Suspense } from "react";
 
 
 const geistSans = Geist({
@@ -30,8 +32,6 @@ export const metadata: Metadata = {
   },
 };
 
-const themeScript = `(function(){try{var stored=localStorage.getItem("framio-theme");var dark=stored==="dark"||(!stored&&window.matchMedia("(prefers-color-scheme: dark)").matches);var root=document.documentElement;root.classList.toggle("dark",dark);root.style.colorScheme=dark?"dark":"light";}catch(e){}})();`;
-
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -39,11 +39,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full`}
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        <Navbar />
+        <ThemeInitializer />
+        <Suspense fallback={<div className="h-16" aria-hidden="true" />}>
+          <Navbar />
+        </Suspense>
           {children}
           <Footer />
         <Toaster />
