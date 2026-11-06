@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
@@ -18,6 +18,7 @@ import { FaGoogle } from "react-icons/fa6"
 
 import { toast } from "@/components/ui/toast"
 import { authClient } from "@/lib/auth-client"
+import { LoadingSpinner } from "@/components/ui/spinner"
 
 const passwordRules = [
   { label: "6+ characters", test: (value: string) => value.length >= 6 },
@@ -83,7 +84,7 @@ export function RegisterForm() {
     if (errors[field]) setErrors((current) => ({ ...current, [field]: "" }))
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
     if (isSubmitting) return
 
@@ -409,11 +410,7 @@ export function RegisterForm() {
             >
               {isSubmitting ? (
                 <>
-                  Creating account
-                  <span
-                    className="size-3.5 animate-spin rounded-full border-2 border-current border-r-transparent"
-                    aria-hidden="true"
-                  />
+                  Creating account <LoadingSpinner size="sm" label="Creating account" className="text-primary-foreground" />
                 </>
               ) : (
                 <>

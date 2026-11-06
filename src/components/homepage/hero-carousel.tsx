@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { ArrowRightIcon, Building2Icon } from "lucide-react"
 import SwiperClass, { type Swiper as SwiperInstance } from "swiper"
 import { Autoplay, Keyboard } from "swiper/modules"
@@ -126,8 +127,8 @@ export function HeroCarousel() {
                     </p>
 
                     <div className="mt-5 flex flex-wrap items-center gap-2.5 sm:mt-6">
-                      <a
-                        href="#studios"
+                      <Link
+                        href="/studios"
                         className={buttonVariants({
                           size: "sm",
                           className:
@@ -139,9 +140,9 @@ export function HeroCarousel() {
                           className="size-3.5"
                           aria-hidden="true"
                         />
-                      </a>
+                      </Link>
                       <a
-                        href="#for-studios"
+                        href="/for-studios"
                         className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-white/25 bg-white/10 px-4 text-xs font-medium text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/40"
                       >
                         <Building2Icon

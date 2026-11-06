@@ -5,6 +5,7 @@ import Link from "next/link"
 import {
   ArrowRightIcon,
   CameraIcon,
+  HeartIcon,
   ImageOffIcon,
   MapPinIcon,
   Maximize2Icon,
@@ -12,23 +13,9 @@ import {
 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
-type StudioId = string | { $oid: string }
+import type { Studio } from "@/lib/types/page"
 
-type Studio = {
-  _id: StudioId
-  title?: string
-  category?: string
-  tagline?: string
-  hourlyRate?: string | number
-  coverImageUrl?: string
-  address?: string
-  squareFootage?: string | number
-  description?: string
-  rating?: string | number
-  averageRating?: string | number
-  avgRating?: string | number
-  createdAt?: string | number | Date
-}
+
 
 type CategoryFilter = "all" | "photo" | "sound" | "podcast"
 
@@ -41,7 +28,7 @@ const categoryFilters: Array<{ label: string; value: CategoryFilter }> = [
 
 const apiBaseUrl = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "")
 
-function getStudioId(studio: Studio) {
+export function getStudioId(studio: Studio) {
   return typeof studio._id === "string" ? studio._id : studio._id.$oid
 }
 
@@ -117,8 +104,8 @@ function StudioImage({ studio }: { studio: Studio }) {
   )
 }
 
-function StudioCard({ studio }: { studio: Studio }) {
-  // const [isFavorite, setIsFavorite] = useState(false)
+export function StudioCard({ studio }: { studio: Studio }) {
+  const [isFavorite, setIsFavorite] = useState(false)
   const rating = getRating(studio)
   const id = getStudioId(studio)
 
@@ -129,7 +116,15 @@ function StudioCard({ studio }: { studio: Studio }) {
         <span className="absolute top-3 left-3 rounded-md bg-foreground/85 px-2 py-1 text-[0.625rem] font-bold tracking-wide text-background uppercase backdrop-blur-sm">
           {getCategoryLabel(studio.category)}
         </span>
-       
+        <button
+          type="button"
+          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          aria-pressed={isFavorite}
+          onClick={() => setIsFavorite((current) => !current)}
+          className="absolute top-3 right-3 flex size-8 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow-sm transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <HeartIcon className={`size-4 ${isFavorite ? "fill-primary text-primary" : ""}`} aria-hidden="true" />
+        </button>
         {rating !== null ? (
           <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-md bg-background/90 px-2 py-1 text-[0.6875rem] font-semibold text-foreground shadow-sm backdrop-blur-sm">
             <StarIcon className="size-3 fill-highlight text-highlight" aria-hidden="true" />
@@ -146,10 +141,10 @@ function StudioCard({ studio }: { studio: Studio }) {
               {studio.address}
             </span>
           ) : null}
-          {studio.squareFootage ? (
+          {studio.squareFootage || studio.gearSummary ? (
             <span className="flex shrink-0 items-center gap-1">
               <Maximize2Icon className="size-3 text-primary" aria-hidden="true" />
-              {studio.squareFootage} sq ft
+              {studio.gearSummary ?? `${studio.squareFootage} sq ft`}
             </span>
           ) : null}
         </div>

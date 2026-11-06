@@ -3,8 +3,11 @@
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useStudioId } from "@/components/studio/studio-id-context"
 import { authClient } from "@/lib/auth-client"
+import { toast } from "@/components/ui/toast"
+import { LoadingSpinner } from "@/components/ui/spinner"
 import {
   AudioLinesIcon,
   Building2Icon,
@@ -85,6 +88,9 @@ const fieldClassName =
   "h-10 w-full min-w-0 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-3 focus:ring-primary/15"
 
 const helperClassName = "mt-1.5 text-xs leading-relaxed text-muted-foreground"
+const apiBaseUrl = (
+  process.env.NEXT_PUBLIC_API_URL ?? " "
+).replace(/\/+$/, "")
 
 function Field({
   id,
@@ -209,6 +215,7 @@ type Studio = {
 }
 
 export default function AddStudioForm() {
+  const router = useRouter()
   const studioId = useStudioId()
   const { data: session } = authClient.useSession()
   const [studio, setStudio] = useState<Studio | null>(null)
@@ -218,10 +225,6 @@ export default function AddStudioForm() {
   const [coverUrl, setCoverUrl] = useState("")
   const [previewUrl, setPreviewUrl] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submissionMessage, setSubmissionMessage] = useState<{
-    type: "success" | "error"
-    text: string
-  } | null>(null)
 
   useEffect(() => {
     if (!studioId) return
@@ -230,11 +233,8 @@ export default function AddStudioForm() {
     const controller = new AbortController()
     async function loadStudio() {
       try {
-        const apiBaseUrl = (
-          process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"
-        ).replace(/\/+$/, "")
         const response = await fetch(
-          `${apiBaseUrl}/studios/${encodeURIComponent(listingId)}`,
+          `${apiBaseUrl}/studio/${encodeURIComponent(listingId)}`,
           { credentials: "omit", signal: controller.signal },
         )
 
@@ -271,12 +271,7 @@ export default function AddStudioForm() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    
-
-    
-
     setIsSubmitting(true)
-    setSubmissionMessage(null)
 
     const formData = new FormData(event.currentTarget)
     const amenities = formData.getAll("amenities").map(String)
@@ -288,36 +283,38 @@ export default function AddStudioForm() {
     }
 
     try {
-     const res = await fetch("http://localhost:5000/add-studios", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-       credentials: "omit",
-      body: JSON.stringify(studioData),
-    })
-  
-      const data = await res.json()
-        console.log("Studio submission response:", data)
+      const res = await fetch(
+        studioId
+          ? `${apiBaseUrl}/studio/${encodeURIComponent(studioId)}`
+          : `${apiBaseUrl}/add-studios`,
+        {
+          method: studioId ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "omit",
+          body: JSON.stringify(studioData),
+        },
+      )
+      const responseText = await res.text()
 
       if (!res.ok) {
-        const errorMessage = await res.text()
         throw new Error(
-          errorMessage ||
+          responseText ||
             `Studio ${studioId ? "update" : "creation"} failed (${res.status}).`,
         )
       }
 
-      setSubmissionMessage({
+      toast.add({
+        title: `Studio ${studioId ? "updated" : "created"}`,
+        description: `Your studio was ${studioId ? "updated" : "created"} successfully.`,
         type: "success",
-        text: `Studio ${studioId ? "updated" : "created"} successfully.`,
       })
+      router.push("/my-listings")
     } catch (error) {
       console.error(`Failed to ${studioId ? "update" : "create"} studio:`, error)
-      setSubmissionMessage({
+      toast.add({
+        title: `Unable to ${studioId ? "update" : "create"} studio`,
+        description: error instanceof Error ? error.message : "Please try again.",
         type: "error",
-        text:
-          error instanceof Error
-            ? error.message
-            : `Unable to ${studioId ? "update" : "create"} studio. Please try again.`,
       })
     } finally {
       setIsSubmitting(false)
@@ -327,9 +324,7 @@ export default function AddStudioForm() {
   if (isLoading) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-background px-4 text-foreground">
-        <p role="status" className="text-sm text-muted-foreground">
-          Loading studio details...
-        </p>
+        <LoadingSpinner size="lg" label="Loading studio details" />
       </div>
     )
   }
@@ -695,18 +690,6 @@ export default function AddStudioForm() {
         </Card>
 
         <div className="border-t border-border/80 pt-7">
-          {submissionMessage ? (
-            <p
-              role={submissionMessage.type === "error" ? "alert" : "status"}
-              className={`mb-3 text-sm ${
-                submissionMessage.type === "error"
-                  ? "text-destructive"
-                  : "text-primary"
-              }`}
-            >
-              {submissionMessage.text}
-            </p>
-          ) : null}
           <div className="flex items-center justify-between gap-3">
             <button
               type="button"
@@ -715,7 +698,6 @@ export default function AddStudioForm() {
                 setSelectedCategory(studio?.category ?? "Photo Studio")
                 setCoverUrl(studio?.coverImageUrl ?? "")
                 setPreviewUrl(studio?.coverImageUrl ?? "")
-                setSubmissionMessage(null)
               }}
               className="h-10 rounded-lg bg-secondary px-5 text-xs font-medium text-primary transition-colors hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-primary/30"
             >
@@ -729,8 +711,8 @@ export default function AddStudioForm() {
               <StoreIcon className="size-4" aria-hidden="true" />
               {isSubmitting
                 ? studioId
-                  ? "Saving..."
-                  : "Creating..."
+                  ? <><LoadingSpinner size="sm" label="Saving studio" className="text-primary-foreground" /> Saving...</>
+                  : <><LoadingSpinner size="sm" label="Creating studio" className="text-primary-foreground" /> Creating...</>
                 : studioId
                   ? "Save Changes"
                   : "Create Studio"}

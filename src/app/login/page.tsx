@@ -18,6 +18,7 @@ import { FaGoogle } from "react-icons/fa6"
 import { useRouter } from "next/navigation";
 import { authClient } from "../../lib/auth-client";
 import { toast } from "@/components/ui/toast"
+import { LoadingSpinner } from "@/components/ui/spinner"
 
 
 
@@ -175,20 +176,12 @@ export default function LoginPage() {
                   >
                     Password
                   </label>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      toast.add({
-                        title: "Password recovery unavailable",
-                        description: "Password recovery is not connected yet.",
-                        type: "error",
-                      })
-                    }
-                    disabled={loading}
+                  <a
+                    href="#"
                     className="text-[0.62rem] font-semibold text-primary transition-colors hover:text-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
                   >
                     Forgot password?
-                  </button>
+                  </a>
                 </div>
                 <div className="flex h-10 items-center gap-2 rounded-lg border border-border bg-secondary px-2.5 transition-colors focus-within:border-highlight focus-within:ring-2 focus-within:ring-highlight/40">
                   <LockKeyholeIcon
@@ -229,11 +222,7 @@ export default function LoginPage() {
               >
                 {loading ? (
                   <>
-                    Logging in
-                    <span
-                      className="size-3.5 animate-spin rounded-full border-2 border-current border-r-transparent"
-                      aria-hidden="true"
-                    />
+                    Logging in <LoadingSpinner size="sm" label="Logging in" className="text-primary-foreground" />
                   </>
                 ) : (
                   <>

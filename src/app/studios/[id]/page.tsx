@@ -3,10 +3,15 @@ import { notFound } from "next/navigation"
 import { StudioDetailsClient } from "@/components/studio-details/studio-details-client"
 import type { StudioDetails } from "@/lib/studio-details"
 
+const apiBaseUrl = (
+  process.env.NEXT_PUBLIC_API_URL ?? " "
+).replace(/\/+$/, "")
 
 
 async function getStudio(id: string) {
-  const response = await fetch(`http://localhost:8000/studio/${id}`);
+  const response = await fetch(
+    `${apiBaseUrl}/studio/${id}`,
+  )
 
   if (response.status === 400 || response.status === 404) notFound()
   if (!response.ok) {

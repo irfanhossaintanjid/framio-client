@@ -14,6 +14,7 @@ import { usePathname } from "next/navigation"
 
 import {
   CalendarDaysIcon,
+  HeartIcon,
   LayoutDashboardIcon,
   LogOutIcon,
   MenuIcon,
@@ -37,7 +38,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -56,7 +56,7 @@ import {
 // ==========================================
 
 const navigationLinks = [
-  { label: "Home", href: "/#home" },
+  { label: "Home", href: "/" },
   { label: "Explore Studios", href: "/studios" },
   { label: "How It Works", href: "/#how-it-works" },
   { label: "About Us", href: "/#about" },
@@ -64,9 +64,9 @@ const navigationLinks = [
 
 const accountLinks = [
   {
-    label: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboardIcon,
+    label: "Saved Studios",
+    href: "/saved-studios",
+    icon: HeartIcon,
   },
   {
     label: "Add New Studio",
@@ -148,9 +148,9 @@ function UserAvatar({
 }) {
   return (
     <Avatar size={size}>
-      {user.avatarUrl ? (
+      {user.image ? (
         <AvatarImage
-          src={user.avatarUrl}
+          src={user.image}
           alt={user.name}
         />
       ) : null}
@@ -222,9 +222,9 @@ function ThemeToggle({
       }
     >
       {isDark ? (
-        <SunIcon aria-hidden="true" />
+        <SunIcon aria-hidden="true" className="hover:bg-[#ffffff] hover:text-[#0b1e2c]" />
       ) : (
-        <MoonIcon aria-hidden="true" />
+        <MoonIcon aria-hidden="true" className="hover:bg-[#0b1e2c] hover:text-[#ffffff]" />
       )}
     </Button>
   )
@@ -291,15 +291,47 @@ function NavigationLinks({
 // Mobile Account Links
 // ==========================================
 
-function MobileAccountLinks({
-  user,
+function MobileAccountLogout({
   onLogout,
   onClose,
 }: {
-  user: NavbarUser | null | undefined
+
   onLogout?: () => void
   onClose: () => void
 }) {
+  return (
+    <>
+      {/* Logout */}
+      <button
+        type="button"
+        onClick={() => {
+          onClose()
+          onLogout?.()
+        }}
+        className="flex min-h-11 items-center gap-3 rounded-lg px-7 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
+      >
+        <LogOutIcon
+          className="size-4"
+          aria-hidden="true"
+        />
+
+        Logout
+      </button>
+    </>
+  )
+}
+
+
+
+
+function MobileAccountLinks({
+  user,
+  onClose,
+}: {
+  user: NavbarUser | null | undefined
+  onClose: () => void
+}) 
+ {
   // Unauthenticated State
   if (!user) {
     return (
@@ -325,9 +357,9 @@ function MobileAccountLinks({
 
   // Authenticated State
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-4">
       {/* User Information */}
-      <div className="mb-2 flex items-center gap-3 px-3 py-2">
+      <div className="mb-2 flex items-center gap-3 ">
         <UserAvatar user={user} size="lg" />
 
         <div className="min-w-0">
@@ -335,14 +367,17 @@ function MobileAccountLinks({
             {user.name}
           </p>
           <p className="text-xs text-muted-foreground">
-            My Account
+             {user.email}
           </p>
         </div>
       </div>
 
-      <div className="mb-2 border-t border-border" />
+      <div className=" border-t border-border" />
+
+
 
       {/* Account Navigation */}
+      <span className=" font-bold text-gray-600">HOSTING</span>
       {accountLinks.map(({ label, href, icon: Icon }) => (
         <Link
           key={href}
@@ -359,24 +394,8 @@ function MobileAccountLinks({
         </Link>
       ))}
 
-      <div className="my-2 border-t border-border" />
+      <div className="mt-3 border-t border-border" />
 
-      {/* Logout */}
-      <button
-        type="button"
-        onClick={() => {
-          onClose()
-          onLogout?.()
-        }}
-        className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
-      >
-        <LogOutIcon
-          className="size-4"
-          aria-hidden="true"
-        />
-
-        Logout
-      </button>
     </div>
   )
 }
@@ -425,7 +444,7 @@ function MobileMenu({
       </SheetTrigger>
 
       <SheetContent
-        side={tablet ? "top" : "right"}
+        side={tablet ? "top" : "left"}
         className={
           tablet
             ? "max-h-[calc(100dvh-4rem)] gap-0 overflow-y-auto border-border md:data-[side=top]:top-16 md:max-w-none"
@@ -433,22 +452,24 @@ function MobileMenu({
         }
       >
         <SheetHeader>
-          <SheetTitle>
-            {tablet ? "Framio Navigation" : "Explore Framio"}
-          </SheetTitle>
-
-          <SheetDescription>
-            Find the right creative space.
-          </SheetDescription>
-        </SheetHeader>
-
+        {/* Account Navigation */}
+        <div>
+          <MobileAccountLinks
+            user={user}
+            onClose={closeMenu}
+            />
+        </div>
+            </SheetHeader>
         {/* Main Navigation */}
         <nav
           aria-label={
             tablet ? "Tablet navigation" : "Mobile navigation"
           }
-          className="flex flex-col gap-1 px-4 pb-4"
+          className="flex flex-col px-4"
         >
+
+                <span className=" mb-4 font-bold text-gray-600">MARKETPLACE</span>
+
           <NavigationLinks
             pathname={pathname}
             activeHash={activeHash}
@@ -460,14 +481,13 @@ function MobileMenu({
 
         <div className="mx-4 border-t border-border" />
 
-        {/* Account Navigation */}
-        <div className="mt-4 px-4 pb-5">
-          <MobileAccountLinks
-            user={user}
+         <div >
+          <MobileAccountLogout
             onLogout={onLogout}
             onClose={closeMenu}
-          />
+            />
         </div>
+
       </SheetContent>
     </Sheet>
   )
@@ -484,7 +504,9 @@ export function Navbar({
   const pathname = usePathname()
    const {data:session} = authClient.useSession()
 
-   const user = session?.user;
+   const user = session?.user
+     ? { ...session.user, image: session.user.image ?? undefined }
+     : undefined
 
   const [activeHash, setActiveHash] = useState("")
 
@@ -598,10 +620,14 @@ export function Navbar({
                 align="end"
                 className="w-56"
               >
-                <DropdownMenuLabel className="truncate">
+                <div className="gap-3 px-3 py-2"> 
+                <div className="truncate font-bold ">
                   {user.name}
-                </DropdownMenuLabel>
-
+                </div>
+                <div className="text-xs font-medium text-gray-500">
+                  {user.email}
+                </div>
+                </div>
                 <DropdownMenuSeparator />
 
                 {accountLinks.map(({ label, href, icon: Icon }) => (
