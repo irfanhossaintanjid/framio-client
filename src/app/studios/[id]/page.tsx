@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { StudioDetailsClient } from "@/components/studio-details/studio-details-client"
-import type { StudioDetails } from "@/lib/studio-details"
+import type { StudioDetails } from "@/lib/types/page"
 
 const apiBaseUrl = (
   process.env.NEXT_PUBLIC_API_URL ?? " "
@@ -10,7 +10,7 @@ const apiBaseUrl = (
 
 async function getStudio(id: string) {
   const response = await fetch(
-    `${apiBaseUrl}/studio/${id}`,
+    `${apiBaseUrl}/studio/${encodeURIComponent(id)}`,
   )
 
   if (response.status === 400 || response.status === 404) notFound()

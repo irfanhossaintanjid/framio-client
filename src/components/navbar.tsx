@@ -10,7 +10,7 @@ import { authClient } from "@/lib/auth-client"
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 
 import {
   CalendarDaysIcon,
@@ -45,11 +45,10 @@ import {
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
-  SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import { toast } from "@/components/ui/toast"
 
 // ==========================================
 // Navigation Configuration
@@ -101,6 +100,8 @@ function getInitials(name: string) {
     .join("")
     .toUpperCase()
 }
+
+
 
 function isActiveLink(
   href: string,
@@ -290,13 +291,11 @@ function NavigationLinks({
 // ==========================================
 // Mobile Account Links
 // ==========================================
-
 function MobileAccountLogout({
-  onLogout,
+  handleSignoout,
   onClose,
 }: {
-
-  onLogout?: () => void
+  handleSignoout: () => void
   onClose: () => void
 }) {
   return (
@@ -306,7 +305,7 @@ function MobileAccountLogout({
         type="button"
         onClick={() => {
           onClose()
-          onLogout?.()
+          handleSignoout()
         }}
         className="flex min-h-11 items-center gap-3 rounded-lg px-7 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
       >
@@ -483,7 +482,7 @@ function MobileMenu({
 
          <div >
           <MobileAccountLogout
-            onLogout={onLogout}
+            handleSignoout={onLogout ?? (() => {})}
             onClose={closeMenu}
             />
         </div>
@@ -502,11 +501,42 @@ export function Navbar({
   onLogout,
 }: ResponsiveNavbarProps) {
   const pathname = usePathname()
+  const router = useRouter()
    const {data:session} = authClient.useSession()
 
    const user = session?.user
      ? { ...session.user, image: session.user.image ?? undefined }
      : undefined
+
+  async function handleLogout() {
+    if (onLogout) {
+      onLogout()
+      return
+    }
+
+    try {
+      const { error } = await authClient.signOut()
+
+      if (error) {
+        toast.add({
+          title: "Logout failed",
+          description: error.message,
+          type: "error",
+        })
+        return
+      }
+
+      router.replace("/")
+      router.refresh()
+    } catch (error) {
+      console.error("Logout error:", error)
+      toast.add({
+        title: "Logout failed",
+        description: "Something went wrong. Please try again.",
+        type: "error",
+      })
+    }
+  }
 
   const [activeHash, setActiveHash] = useState("")
 
@@ -645,7 +675,7 @@ export function Navbar({
 
                 <DropdownMenuItem
                   variant="destructive"
-                  onClick={onLogout}
+                  onClick={() => void handleLogout()}
                 >
                   <LogOutIcon aria-hidden="true" />
                   Logout
@@ -687,7 +717,7 @@ export function Navbar({
 
           <MobileMenu
             user={user}
-            onLogout={onLogout}
+            onLogout={handleLogout}
             pathname={pathname}
             activeHash={activeHash}
             onNavigate={handleNavigate}
@@ -705,7 +735,7 @@ export function Navbar({
 
           <MobileMenu
             user={user}
-            onLogout={onLogout}
+            onLogout={handleLogout}
             pathname={pathname}
             activeHash={activeHash}
             onNavigate={handleNavigate}

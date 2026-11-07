@@ -2,10 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
-  ArrowRightIcon,
   BadgeCheckIcon,
   Building2Icon,
   CheckIcon,
@@ -16,8 +14,6 @@ import {
   CopyIcon,
   HeartIcon,
   ImageOffIcon,
-  InfoIcon,
-  MailIcon,
   MapPinIcon,
   Maximize2Icon,
   Share2Icon,
@@ -26,25 +22,20 @@ import {
   UsersIcon,
   Volume2Icon,
   WifiIcon,
-  XIcon,
   ZapIcon,
 } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
 import { toast } from "@/components/ui/toast";
+import { BookingCard } from "@/components/booking/bookingCard";
 import {
   amenityGroups,
   cityFromAddress,
   formatMoney,
   galleryForStudio,
   numberValue,
-  studioId,
   studioTypeLabel,
-  type StudioDetails,
-  type StudioReview,
 } from "@/lib/studio-details";
 
-const apiBaseUrl = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
-const CLEANING_FEE_MULTIPLIER = 1;
+import type {StudioDetails} from "@/lib/types/page"
 
 function ImageFallback({ className = "" }: { className?: string }) {
   return (
@@ -164,16 +155,16 @@ function HostCard({ studio }: { studio: StudioDetails }) {
   const name = studio.ownerName || "Framio Host";
   const initials = name
     .split(/\s+/)
-    .map((part) => part[0])
+    .map((part: string) => part[0])
     .join("")
     .slice(0, 2)
     .toUpperCase();
   return (
     <section className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
       <div className="flex min-w-0 items-center gap-3">
-        {studio.ownerPhoto ? (
+        {studio.ownerImage ? (
           <Image
-            src={studio.ownerPhoto}
+            src={studio.ownerImage}
             alt={name}
             width={48}
             height={48}
@@ -190,19 +181,12 @@ function HostCard({ studio }: { studio: StudioDetails }) {
             Hosted by {name}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Verified Framio host{" "}
+            {studio.ownerEmail}
             <BadgeCheckIcon className="ml-1 inline size-3.5 text-primary" />
           </p>
         </div>
       </div>
-      {studio.ownerEmail ? (
-        <a
-          href={`mailto:${studio.ownerEmail}?subject=${encodeURIComponent(`Question about ${studio.title ?? "your studio"}`)}`}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-secondary px-3 py-2 text-xs font-semibold text-primary hover:bg-accent"
-        >
-          <MailIcon className="size-3.5" /> Contact Host
-        </a>
-      ) : null}
+      
     </section>
   );
 }
@@ -324,484 +308,102 @@ function Amenities({ studio }: { studio: StudioDetails }) {
   );
 }
 
-function BookingCard({ studio }: { studio: StudioDetails }) {
-  const router = useRouter();
-  const { data: session } = authClient.useSession();
-  const minHours = Math.max(1, numberValue(studio.minimumDuration, 1));
-  const rate = numberValue(studio.hourlyRate);
-  const deposit = numberValue(studio.securityDeposit);
-  const [tomorrow, setTomorrow] = useState("");
-  const [date, setDate] = useState("");
-  const [start, setStart] = useState("09:00");
-  const [end, setEnd] = useState(`${String(9 + minHours).padStart(2, "0")}:00`);
-  const [open, setOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const startHour = Number(start.slice(0, 2));
-  const endHour = Number(end.slice(0, 2));
-  const hours = Math.max(0, endHour - startHour);
-  const cleaning = rate * CLEANING_FEE_MULTIPLIER;
-  const total = rate * hours + cleaning;
-  const owner = Boolean(
-    session?.user?.email &&
-    studio.ownerEmail &&
-    session.user.email === studio.ownerEmail,
-  );
-  const times = Array.from({ length: 18 }, (_, index) => index + 6);
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      const nextDay = new Date(Date.now() + 86400000)
-        .toISOString()
-        .slice(0, 10);
-      setTomorrow(nextDay);
-      setDate((current) => current || nextDay);
-    }, 0);
-    return () => window.clearTimeout(timeout);
-  }, []);
-  const displayTime = (value: string) => {
-    const hour = Number(value.slice(0, 2));
-    return `${hour % 12 || 12}:00 ${hour >= 12 ? "PM" : "AM"}`;
-  };
-  async function beginBooking() {
-    if (owner)
-      return toast.add({
-        title: "Your own listing",
-        description: "You cannot book your own studio.",
-        type: "info",
-      });
-    if (!session) {
-      toast.add({
-        title: "Please log in",
-        description: "Please log in to book this space.",
-        type: "info",
-      });
-      router.push(
-        `/login?redirect=/studios/${encodeURIComponent(studioId(studio))}`,
-      );
-      return;
-    }
-    if (hours < minHours)
-      return toast.add({
-        title: "Choose a longer booking",
-        description: `This studio requires at least ${minHours} hours.`,
-        type: "error",
-      });
-    setOpen(true);
-  }
-  async function confirmBooking() {
-    setSubmitting(true);
-    try {
-      const response = await fetch(`${apiBaseUrl}/api/bookings`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          studioId: studioId(studio),
-          date,
-          startTime: start,
-          endTime: end,
-        }),
-      });
-      if (response.status === 409)
-        throw new Error(
-          (await response.json().catch(() => null))?.message ??
-            "This time slot is already booked.",
-        );
-      if (response.status === 401) {
-        toast.add({
-          title: "Session expired",
-          description: "Please log in again.",
-          type: "error",
-        });
-        router.push(
-          `/login?redirect=/studios/${encodeURIComponent(studioId(studio))}`,
-        );
-        return;
-      }
-      if (!response.ok) throw new Error(await response.text());
-      toast.add({
-        title: "Booking request sent!",
-        description: "The host will review your production request.",
-        type: "success",
-      });
-      setOpen(false);
-      router.push("/my-bookings");
-    } catch (error) {
-      toast.add({
-        title: "Booking failed",
-        description:
-          error instanceof Error ? error.message : "Please try again.",
-        type: "error",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  }
-  return (
-    <>
-      <section
-        id="booking-card"
-        className="rounded-2xl border border-border bg-card p-5 shadow-lg lg:sticky lg:top-24"
-      >
-        <div className="flex items-end justify-between">
-          <p className="text-3xl font-bold text-foreground">
-            {formatMoney(rate)}
-            <span className="text-sm font-medium text-muted-foreground">
-              {" "}
-              / hour
-            </span>
-          </p>
-          <span className="rounded-full bg-secondary px-2 py-1 text-[0.625rem] font-semibold text-primary">
-            {minHours} hrs min booking
-          </span>
-        </div>
-        <div className="mt-5 space-y-4">
-          <label className="block text-xs font-semibold text-foreground">
-            Production Date
-            <input
-              type="date"
-              min={tomorrow}
-              value={date}
-              onChange={(event) => setDate(event.target.value)}
-              className="mt-1.5 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
-            />
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block text-xs font-semibold text-foreground">
-              Call Time (Start)
-              <select
-                value={start}
-                onChange={(event) => {
-                  const next = event.target.value;
-                  setStart(next);
-                  if (
-                    Number(end.slice(0, 2)) <
-                    Number(next.slice(0, 2)) + minHours
-                  )
-                    setEnd(
-                      `${String(Number(next.slice(0, 2)) + minHours).padStart(2, "0")}:00`,
-                    );
-                }}
-                className="mt-1.5 h-10 w-full rounded-lg border border-border bg-background px-2 text-sm"
-              >
-                <option disabled>Choose start</option>
-                {times.map((hour) => (
-                  <option
-                    key={hour}
-                    value={`${String(hour).padStart(2, "0")}:00`}
-                  >
-                    {displayTime(`${String(hour).padStart(2, "0")}:00`)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block text-xs font-semibold text-foreground">
-              Wrap Time (End)
-              <select
-                value={end}
-                onChange={(event) => setEnd(event.target.value)}
-                className="mt-1.5 h-10 w-full rounded-lg border border-border bg-background px-2 text-sm"
-              >
-                {times
-                  .filter((hour) => hour > Number(start.slice(0, 2)))
-                  .map((hour) => (
-                    <option
-                      key={hour}
-                      value={`${String(hour).padStart(2, "0")}:00`}
-                    >
-                      {displayTime(`${String(hour).padStart(2, "0")}:00`)}
-                    </option>
-                  ))}
-              </select>
-            </label>
-          </div>
-          {hours < minHours ? (
-            <p className="text-xs text-destructive">
-              Wrap time must be at least {minHours} hours after call time.
-            </p>
-          ) : null}
-          <div className="flex items-center justify-between rounded-lg bg-secondary px-3 py-2 text-xs">
-            <span>
-              <Clock3Icon className="mr-1 inline size-3" /> Total Reserved
-              Duration
-            </span>
-            <strong>{hours} Hours Production Hold</strong>
-          </div>
-          <div className="space-y-2 border-t border-border pt-3 text-xs text-muted-foreground">
-            <div className="flex justify-between">
-              <span>
-                {formatMoney(rate)} × {hours} hrs
-              </span>
-              <span>{formatMoney(rate * hours)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Standard Post-Shoot Cleaning</span>
-              <span>{formatMoney(cleaning)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>
-                Security Deposit (Escrow) <InfoIcon className="inline size-3" />
-              </span>
-              <span>{formatMoney(deposit)}</span>
-            </div>
-            <div className="flex justify-between border-t border-border pt-3 text-sm font-bold text-foreground">
-              <span>Total Estimated</span>
-              <span>{formatMoney(total)}</span>
-            </div>
-            <p className="text-right text-[0.625rem]">
-              + {formatMoney(deposit)} refundable escrow
-            </p>
-          </div>
-          <button
-            type="button"
-            disabled={owner || hours < minHours}
-            onClick={() => void beginBooking()}
-            className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-bold text-primary-foreground hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {owner ? "Your Own Listing" : "Book Workspace Now"}
-            <ArrowRightIcon className="size-4" />
-          </button>
-          <p className="text-center text-[0.625rem] text-muted-foreground">
-            You won&apos;t be charged yet. Instant confirmation upon host
-            availability.
-          </p>
-          <div className="flex justify-center gap-3 text-[0.625rem] font-semibold text-muted-foreground">
-            <span>◉ Free cancellation (48h)</span>
-            <span>◉ $1M Insurance</span>
-          </div>
-        </div>
-      </section>
-      {open ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="booking-dialog-title"
-        >
-          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <h2 id="booking-dialog-title" className="text-lg font-bold">
-                Confirm your booking
-              </h2>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                aria-label="Close booking dialog"
-              >
-                <XIcon className="size-5" />
-              </button>
-            </div>
-            <p className="mt-4 text-sm font-semibold">{studio.title}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {date} · {displayTime(start)} – {displayTime(end)} · {hours} hours
-            </p>
-            <div className="mt-4 space-y-2 border-t border-border pt-4 text-sm">
-              <div className="flex justify-between">
-                <span>Production hold</span>
-                <span>{formatMoney(rate * hours)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Cleaning</span>
-                <span>{formatMoney(cleaning)}</span>
-              </div>
-              <div className="flex justify-between font-bold">
-                <span>Total</span>
-                <span>{formatMoney(total)}</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {formatMoney(deposit)} refundable escrow is held separately.
-              </p>
-            </div>
-            <div className="mt-5 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="h-10 flex-1 rounded-lg bg-secondary text-sm font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={() => void confirmBooking()}
-                className="h-10 flex-1 rounded-lg bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-50"
-              >
-                {submitting ? "Sending…" : "Confirm Request"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </>
-  );
-}
-
 function Reviews({ studio }: { studio: StudioDetails }) {
-  const { data: session } = authClient.useSession();
-  const [reviews, setReviews] = useState<StudioReview[]>([]);
-  const [open, setOpen] = useState(false);
-  const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState("");
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch(
-      `${apiBaseUrl}/api/studios/${encodeURIComponent(studioId(studio))}/reviews`,
-      { signal: controller.signal },
-    )
-      .then((response) => (response.ok ? response.json() : []))
-      .then((data: unknown) => {
-        if (Array.isArray(data)) setReviews(data as StudioReview[]);
-      })
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, [studio]);
-  async function submitReview() {
-    if (!session) {
-      toast.add({
-        title: "Please log in",
-        description: "Log in to write a review.",
-        type: "info",
-      });
-      return;
-    }
-    if (!comment.trim())
-      return toast.add({
-        title: "Add a comment",
-        description: "Tell other creators about your experience.",
-        type: "error",
-      });
-    try {
-      const response = await fetch(
-        `${apiBaseUrl}/api/studios/${encodeURIComponent(studioId(studio))}/reviews`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ rating, comment }),
-        },
-      );
-      if (!response.ok) throw new Error(await response.text());
-      toast.add({
-        title: "Review submitted",
-        description: "Thanks for sharing your experience.",
-        type: "success",
-      });
-      setOpen(false);
-      setComment("");
-    } catch (error) {
-      toast.add({
-        title: "Review unavailable",
-        description:
-          error instanceof Error ? error.message : "Please try again later.",
-        type: "error",
-      });
-    }
+  const reviews = studio.reviews ?? [];
+  const average = reviews.length
+    ? reviews.reduce((total, review) => total + numberValue(review.rating), 0) /
+      reviews.length
+    : numberValue(studio.rating);
+
+  function formatDate(value?: string) {
+    if (!value) return "";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime())
+      ? ""
+      : new Intl.DateTimeFormat("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }).format(date);
   }
-  const average = numberValue(
-    studio.rating,
-    reviews.length
-      ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
-      : 0,
-  );
+
   return (
-    <section>
+    <section aria-labelledby="studio-reviews-heading">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold text-foreground">
-            Production Reviews{" "}
-            <span className="ml-1 rounded-full bg-secondary px-2 py-1 text-xs text-primary">
-              {average ? `${average.toFixed(2)} ★` : "New"}
-            </span>
+          <h2 id="studio-reviews-heading" className="text-lg font-bold">
+            Production Reviews
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
             {reviews.length
-              ? `Evaluated by ${reviews.length} verified creators`
-              : "No reviews yet. Be the first to share your experience."}
+              ? `Evaluated by ${reviews.length} verified creator${reviews.length === 1 ? "" : "s"}`
+              : "No reviews yet for this studio."}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() =>
-            session
-              ? setOpen(true)
-              : toast.add({
-                  title: "Please log in",
-                  description: "Log in to write a review.",
-                  type: "info",
-                })
-          }
-          className="rounded-lg bg-secondary px-3 py-2 text-xs font-semibold text-primary"
-        >
-          Write a Review
-        </button>
+        {reviews.length ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-primary">
+            <StarIcon className="size-3 fill-highlight text-highlight" aria-hidden="true" />
+            {average.toFixed(2)}
+          </span>
+        ) : null}
       </div>
+
       {reviews.length ? (
-        <div className="mt-4 space-y-3">
-          {reviews.map((review, index) => (
-            <article
-              key={review._id ?? index}
-              className="rounded-xl border border-border bg-card p-4"
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-bold">
-                  {review.userName ?? "Verified Creator"}
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {reviews.map((review, index) => {
+            const name = review.userName || "Verified creator";
+            const initials = name
+              .split(" ")
+              .map((part) => part[0])
+              .join("")
+              .slice(0, 2)
+              .toUpperCase();
+
+            return (
+              <article
+                key={review._id ?? `${name}-${review.createdAt ?? index}`}
+                className="rounded-xl border border-border bg-card p-4"
+              >
+                <div className="flex items-center gap-3">
+                  {review.userPhoto ? (
+                    <Image
+                      src={review.userPhoto}
+                      alt={`${name} profile`}
+                      width={36}
+                      height={36}
+                      unoptimized
+                      className="size-9 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="flex size-9 items-center justify-center rounded-full bg-secondary text-xs font-bold text-primary">
+                      {initials}
+                    </span>
+                  )}
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{name}</p>
+                    <p className="text-[0.6875rem] text-muted-foreground">
+                      {formatDate(review.createdAt)}
+                    </p>
+                  </div>
+                  <span className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-foreground">
+                    <StarIcon className="size-3 fill-highlight text-highlight" aria-hidden="true" />
+                    {numberValue(review.rating).toFixed(1)}
+                  </span>
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                  {review.comment}
                 </p>
-                <span className="text-xs text-highlight">
-                  {"★".repeat(Math.max(1, Math.min(5, review.rating)))}
-                </span>
-              </div>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                {review.comment}
-              </p>
-            </article>
-          ))}
-        </div>
-      ) : null}
-      {open ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="w-full max-w-md rounded-2xl bg-card p-5">
-            <div className="flex justify-between">
-              <h3 className="font-bold">Write a review</h3>
-              <button type="button" onClick={() => setOpen(false)}>
-                <XIcon className="size-5" />
-              </button>
-            </div>
-            <div className="mt-4 flex gap-1">
-              {[1, 2, 3, 4, 5].map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setRating(value)}
-                  aria-label={`${value} stars`}
-                >
-                  <StarIcon
-                    className={`size-6 ${value <= rating ? "fill-highlight text-highlight" : "text-muted-foreground"}`}
-                  />
-                </button>
-              ))}
-            </div>
-            <textarea
-              value={comment}
-              onChange={(event) => setComment(event.target.value)}
-              className="mt-4 min-h-32 w-full rounded-lg border border-border bg-background p-3 text-sm"
-              placeholder="How was the space?"
-            />
-            <button
-              type="button"
-              onClick={() => void submitReview()}
-              className="mt-4 h-10 w-full rounded-lg bg-primary text-sm font-semibold text-primary-foreground"
-            >
-              Submit Review
-            </button>
-          </div>
+              </article>
+            );
+          })}
         </div>
       ) : null}
     </section>
   );
 }
+
+
+
 
 export function StudioDetailsClient({ studio }: { studio: StudioDetails }) {
   const rating = numberValue(studio.rating);

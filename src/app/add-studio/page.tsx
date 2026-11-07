@@ -89,7 +89,7 @@ const fieldClassName =
 
 const helperClassName = "mt-1.5 text-xs leading-relaxed text-muted-foreground"
 const apiBaseUrl = (
-  process.env.NEXT_PUBLIC_API_URL ?? " "
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
 ).replace(/\/+$/, "")
 
 function Field({
@@ -280,6 +280,9 @@ export default function AddStudioForm() {
       ...Object.fromEntries(formData.entries()),
       category: selectedCategory,
       amenities,
+      ownerEmail: session?.user?.email ?? "",
+      ownerName: session?.user?.name ?? "",
+      ownerImage: session?.user?.image ?? "",
     }
 
     try {

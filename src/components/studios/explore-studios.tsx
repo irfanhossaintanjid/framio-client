@@ -16,7 +16,7 @@ import {
 } from "@/components/homepage/featured-studios";
 import type {Studio} from "@/lib/types/page";
 
-const apiBaseUrl = (process.env.NEXT_PUBLIC_API_URL ?? " ").replace(/\/+$/, "");
+
 
 type FilterKey = "all" | "photo" | "film" | "podcast" | "music" | "workshop";
 type SortKey = "rating" | "price-low" | "price-high" | "newest";
@@ -29,6 +29,10 @@ const filters: Array<{ label: string; key: FilterKey; icon: LucideIcon }> = [
   { label: "Music Suites", key: "music", icon: Music2Icon },
   { label: "Workshops", key: "workshop", icon: UsersIcon },
 ];
+
+const apiBaseUrl = (
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+).replace(/\/+$/, "");
 
 function ratingOf(studio: Studio) {
   const value = studio.rating ?? studio.averageRating ?? studio.avgRating;
@@ -109,7 +113,6 @@ export function ExploreStudios() {
   const [sort, setSort] = useState<SortKey>("rating");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
     const controller = new AbortController();
     async function loadStudios() {
@@ -210,7 +213,7 @@ export function ExploreStudios() {
         </header>
         {isLoading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }, (_, index) => (
+            {Array.from({ length: 20 }, (_, index) => (
               <GridSkeleton key={index} />
             ))}
           </div>

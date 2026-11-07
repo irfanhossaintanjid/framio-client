@@ -26,7 +26,7 @@ const categoryFilters: Array<{ label: string; value: CategoryFilter }> = [
   { label: "Podcast", value: "podcast" },
 ]
 
-const apiBaseUrl = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "")
+
 
 export function getStudioId(studio: Studio) {
   return typeof studio._id === "string" ? studio._id : studio._id.$oid
@@ -196,10 +196,12 @@ export function FeaturedStudios() {
 
   useEffect(() => {
     const controller = new AbortController()
-
+    const apiBaseUrl = (
+      process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+    ).replace(/\/+$/, "")
     async function loadStudios() {
       try {
-        const response = await fetch(`${apiBaseUrl}/allStudios`, {
+        const response = await fetch(`${apiBaseUrl}/allStudios?limit=6`, {
           credentials: "omit",
           signal: controller.signal,
         })
