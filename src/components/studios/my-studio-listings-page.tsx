@@ -296,7 +296,7 @@ export function MyStudioListingsPage() {
             href="/add-studio"
             className="inline-flex w-fit items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary-hover"
           >
-            <PlusIcon className="size-4" /> Add New Studios
+            <PlusIcon className="size-4" /> Add New Studio
           </Link>
         </header>
         {error ? (

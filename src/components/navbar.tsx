@@ -326,9 +326,13 @@ function MobileAccountLogout({
 function MobileAccountLinks({
   user,
   onClose,
+  pathname,
+  activeHash,
 }: {
   user: NavbarUser | null | undefined
   onClose: () => void
+  pathname: string
+  activeHash: string
 }) 
  {
   // Unauthenticated State
@@ -338,7 +342,8 @@ function MobileAccountLinks({
         <Link
           href="/login"
           onClick={onClose}
-          className="inline-flex h-10 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-secondary"
+          aria-current={pathname === "/login" ? "page" : undefined}
+          className={`inline-flex h-10 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-secondary ${pathname === "/login" ? "border-primary text-link" : ""}`}
         >
           Login
         </Link>
@@ -346,7 +351,8 @@ function MobileAccountLinks({
         <Link
           href="/register"
           onClick={onClose}
-          className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-hover"
+          aria-current={pathname === "/register" ? "page" : undefined}
+          className={`inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-hover ${pathname === "/register" ? "ring-2 ring-primary/40 ring-offset-2" : ""}`}
         >
           Register
         </Link>
@@ -377,21 +383,24 @@ function MobileAccountLinks({
 
       {/* Account Navigation */}
       <span className=" font-bold text-gray-600">HOSTING</span>
-      {accountLinks.map(({ label, href, icon: Icon }) => (
-        <Link
-          key={href}
-          href={href}
-          onClick={onClose}
-          className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-        >
-          <Icon
-            className="size-4"
-            aria-hidden="true"
-          />
-
-          {label}
-        </Link>
-      ))}
+      {accountLinks.map(({ label, href, icon: Icon }) => {
+        const active = isActiveLink(href, pathname, activeHash)
+        return (
+          <Link
+            key={href}
+            href={href}
+            onClick={onClose}
+            aria-current={active ? "page" : undefined}
+            className={`flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors hover:bg-secondary hover:text-foreground ${active ? "bg-secondary text-link" : "text-muted-foreground"}`}
+          >
+            <Icon className="size-4" aria-hidden="true" />
+            {label}
+            {active ? (
+              <span className="ml-auto size-1.5 rounded-full bg-primary" aria-hidden="true" />
+            ) : null}
+          </Link>
+        )
+      })}
 
       <div className="mt-3 border-t border-border" />
 
@@ -456,6 +465,8 @@ function MobileMenu({
           <MobileAccountLinks
             user={user}
             onClose={closeMenu}
+            pathname={pathname}
+            activeHash={activeHash}
             />
         </div>
             </SheetHeader>
@@ -660,16 +671,24 @@ export function Navbar({
                 </div>
                 <DropdownMenuSeparator />
 
-                {accountLinks.map(({ label, href, icon: Icon }) => (
-                  <DropdownMenuItem
-                    key={href}
-                    nativeButton={false}
-                    render={<Link href={href} />}
-                  >
-                    <Icon aria-hidden="true" />
-                    {label}
-                  </DropdownMenuItem>
-                ))}
+                {accountLinks.map(({ label, href, icon: Icon }) => {
+                  const active = isActiveLink(href, pathname, activeHash)
+                  return (
+                    <DropdownMenuItem
+                      key={href}
+                      nativeButton={false}
+                      aria-current={active ? "page" : undefined}
+                      className={active ? "bg-secondary text-link" : ""}
+                      render={<Link href={href} />}
+                    >
+                      <Icon aria-hidden="true" />
+                      {label}
+                      {active ? (
+                        <span className="ml-auto size-1.5 rounded-full bg-primary" aria-hidden="true" />
+                      ) : null}
+                    </DropdownMenuItem>
+                  )
+                })}
 
                 <DropdownMenuSeparator />
 
@@ -687,9 +706,11 @@ export function Navbar({
             <>
               <Link
                 href="/login"
+                aria-current={pathname === "/login" ? "page" : undefined}
                 className={buttonVariants({
                   variant: "ghost",
                   size: "sm",
+                  className: pathname === "/login" ? "text-link" : undefined,
                 })}
               >
                 Login
@@ -697,8 +718,10 @@ export function Navbar({
 
               <Link
                 href="/register"
+                aria-current={pathname === "/register" ? "page" : undefined}
                 className={buttonVariants({
                   size: "sm",
+                  className: pathname === "/register" ? "ring-2 ring-primary/40 ring-offset-2" : undefined,
                 })}
               >
                 Register

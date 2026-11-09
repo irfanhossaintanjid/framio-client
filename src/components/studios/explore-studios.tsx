@@ -30,10 +30,6 @@ const filters: Array<{ label: string; key: FilterKey; icon: LucideIcon }> = [
   { label: "Workshops", key: "workshop", icon: UsersIcon },
 ];
 
-const apiBaseUrl = (
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
-).replace(/\/+$/, "");
-
 function ratingOf(studio: Studio) {
   const value = studio.rating ?? studio.averageRating ?? studio.avgRating;
   const rating = Number(value);
@@ -117,8 +113,8 @@ export function ExploreStudios() {
     const controller = new AbortController();
     async function loadStudios() {
       try {
-        const response = await fetch(`${apiBaseUrl}/allStudios`, {
-          credentials: "omit",
+        const response = await fetch("/api/studios", {
+          credentials: "include",
           signal: controller.signal,
         });
         if (!response.ok)

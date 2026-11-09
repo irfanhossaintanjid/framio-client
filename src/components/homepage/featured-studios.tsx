@@ -5,7 +5,6 @@ import Link from "next/link"
 import {
   ArrowRightIcon,
   CameraIcon,
-  HeartIcon,
   ImageOffIcon,
   MapPinIcon,
   Maximize2Icon,
@@ -14,6 +13,7 @@ import {
 import { useEffect, useMemo, useState } from "react"
 
 import type { Studio } from "@/lib/types/page"
+import { SaveButton } from "@/components/studios/save-button"
 
 
 
@@ -104,8 +104,13 @@ function StudioImage({ studio }: { studio: Studio }) {
   )
 }
 
-export function StudioCard({ studio }: { studio: Studio }) {
-  const [isFavorite, setIsFavorite] = useState(false)
+export function StudioCard({
+  studio,
+  onSavedChange,
+}: {
+  studio: Studio
+  onSavedChange?: (saved: boolean) => void
+}) {
   const rating = getRating(studio)
   const id = getStudioId(studio)
 
@@ -116,15 +121,11 @@ export function StudioCard({ studio }: { studio: Studio }) {
         <span className="absolute top-3 left-3 rounded-md bg-foreground/85 px-2 py-1 text-[0.625rem] font-bold tracking-wide text-background uppercase backdrop-blur-sm">
           {getCategoryLabel(studio.category)}
         </span>
-        <button
-          type="button"
-          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
-          aria-pressed={isFavorite}
-          onClick={() => setIsFavorite((current) => !current)}
-          className="absolute top-3 right-3 flex size-8 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow-sm transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-        >
-          <HeartIcon className={`size-4 ${isFavorite ? "fill-primary text-primary" : ""}`} aria-hidden="true" />
-        </button>
+        <SaveButton
+          studioId={id}
+          initialSaved={studio.isSaved}
+          onSavedChange={onSavedChange}
+        />
         {rating !== null ? (
           <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-md bg-background/90 px-2 py-1 text-[0.6875rem] font-semibold text-foreground shadow-sm backdrop-blur-sm">
             <StarIcon className="size-3 fill-highlight text-highlight" aria-hidden="true" />
@@ -174,7 +175,7 @@ export function StudioCard({ studio }: { studio: Studio }) {
   )
 }
 
-function StudioSkeleton() {
+export function StudioCardSkeleton() {
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card">
       <div className="aspect-[16/10] animate-pulse bg-secondary" />
@@ -196,13 +197,10 @@ export function FeaturedStudios() {
 
   useEffect(() => {
     const controller = new AbortController()
-    const apiBaseUrl = (
-      process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
-    ).replace(/\/+$/, "")
     async function loadStudios() {
       try {
-        const response = await fetch(`${apiBaseUrl}/allStudios?limit=6`, {
-          credentials: "omit",
+        const response = await fetch("/api/studios?limit=6", {
+          credentials: "include",
           signal: controller.signal,
         })
         if (!response.ok) {
@@ -273,7 +271,7 @@ export function FeaturedStudios() {
 
         {isLoading ? (
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }, (_, index) => <StudioSkeleton key={index} />)}
+            {Array.from({ length: 6 }, (_, index) => <StudioCardSkeleton key={index} />)}
           </div>
         ) : error ? (
           <div className="mt-8 rounded-xl border border-destructive/30 bg-card px-5 py-8 text-center">

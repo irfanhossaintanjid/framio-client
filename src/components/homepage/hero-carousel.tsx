@@ -141,8 +141,8 @@ export function HeroCarousel() {
                           aria-hidden="true"
                         />
                       </Link>
-                      <a
-                        href="/for-studios"
+                      <Link
+                        href="/add-studio"
                         className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-white/25 bg-white/10 px-4 text-xs font-medium text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-white/40"
                       >
                         <Building2Icon
@@ -150,7 +150,7 @@ export function HeroCarousel() {
                           aria-hidden="true"
                         />
                         Host Your Space
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 </div>

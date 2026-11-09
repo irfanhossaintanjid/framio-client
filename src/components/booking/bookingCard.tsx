@@ -13,11 +13,6 @@ import { toast } from "@/components/ui/toast";
 import { formatMoney, numberValue, studioId } from "@/lib/studio-details";
 import type { StudioDetails } from "@/lib/types/page";
 
-const apiBaseUrl = (
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
-).replace(/\/+$/, "");
-const CLEANING_FEE_MULTIPLIER = 1;
-
 export function BookingCard({ studio }: { studio: StudioDetails }) {
   const router = useRouter();
   const { data: session } = authClient.useSession();
@@ -33,8 +28,8 @@ export function BookingCard({ studio }: { studio: StudioDetails }) {
   const startHour = Number(start.slice(0, 2));
   const endHour = Number(end.slice(0, 2));
   const hours = Math.max(0, endHour - startHour);
-  const cleaning = rate * CLEANING_FEE_MULTIPLIER;
-  const total = rate * hours + cleaning;
+  const hourlyAmount = rate * hours;
+  const total = hourlyAmount + deposit;
   const owner = Boolean(
     session?.user?.email &&
     studio.ownerEmail &&
@@ -84,32 +79,22 @@ export function BookingCard({ studio }: { studio: StudioDetails }) {
   async function confirmBooking() {
     setSubmitting(true);
     try {
-      const response = await fetch(`${apiBaseUrl}/booking`, {
+      const endAt = new Date(`${date}T${end}:00`).toISOString();
+      const response = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "omit",
+        credentials: "include",
         body: JSON.stringify({
           studioId: studioId(studio),
-          title: studio.title,
-          coverImageUrl: studio.coverImageUrl,
-          securityDeposit: studio.securityDeposit,
-          hourlyRate: studio.hourlyRate,
-          category: studio.category,
-          address: studio.address,
-          userEmail: session?.user?.email,
-          userName: session?.user?.name,
           date,
           startTime: start,
           endTime: end,
-          durationHours: hours,
-          totalAmount: total,
+          endAt,
         }),
       });
+      const responseData = await response.json().catch(() => null);
       if (response.status === 409)
-        throw new Error(
-          (await response.json().catch(() => null))?.message ??
-            "This time slot is already booked.",
-        );
+        throw new Error(responseData?.message ?? "This time slot is already booked.");
       if (response.status === 401) {
         toast.add({
           title: "Session expired",
@@ -121,7 +106,8 @@ export function BookingCard({ studio }: { studio: StudioDetails }) {
         );
         return;
       }
-      if (!response.ok) throw new Error(await response.text());
+      if (!response.ok)
+        throw new Error(responseData?.error ?? responseData?.message ?? "Booking failed.");
       toast.add({
         title: "Booking request sent!",
         description: "The host will review your production request.",
@@ -236,11 +222,7 @@ export function BookingCard({ studio }: { studio: StudioDetails }) {
               <span>
                 {formatMoney(rate)} × {hours} hrs
               </span>
-              <span>{formatMoney(rate * hours)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Standard Post-Shoot Cleaning</span>
-              <span>{formatMoney(cleaning)}</span>
+              <span>{formatMoney(hourlyAmount)}</span>
             </div>
             <div className="flex justify-between">
               <span>
@@ -302,12 +284,8 @@ export function BookingCard({ studio }: { studio: StudioDetails }) {
             </p>
             <div className="mt-3 space-y-2 border-t border-border pt-3 text-sm">
               <div className="flex justify-between">
-                <span>Production hold</span>
-                <span>{formatMoney(rate * hours)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Cleaning</span>
-                <span>{formatMoney(cleaning)}</span>
+                <span>Hourly cost</span>
+                <span>{formatMoney(hourlyAmount)}</span>
               </div>
               <div className="flex justify-between font-bold">
                 <span>Total</span>

@@ -4,7 +4,7 @@ import { mongodbAdapter } from "@better-auth/mongo-adapter";
 // import { jwt } from "better-auth/plugins";
 
 const client = new MongoClient(process.env.MONGODB_URI as string, );
-const db = client.db("Framio"); // Replace with your database name
+export const db = client.db("Framio");
 
 export const auth = betterAuth({
   database: mongodbAdapter(db, {
@@ -12,6 +12,7 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    minPasswordLength: 6,
   },
 
   // plugins: [jwt()],

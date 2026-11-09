@@ -26,10 +26,18 @@ export type Studio = {
   createdAt?: string | number | Date
   gearSummary?: string
   ownerImage? :string
+  isSaved?: boolean
 }
 
 
 export type StudioId = string | { $oid: string }
+
+export type SavedStudio = {
+  _id: string
+  userEmail: string
+  studioId: string
+  savedAt: string
+}
 
 export type StudioReview = {
   _id?: string
@@ -68,4 +76,5 @@ export type StudioDetails = {
   createdAt?: string
   ownerImage?: string
   reviews?: StudioReview[]
+  isSaved?: boolean
 }

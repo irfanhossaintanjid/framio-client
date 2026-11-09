@@ -55,9 +55,9 @@ function ViewAllLink({ className }: { className?: string }) {
   return (
     <Link
       href={allCategoriesHref}
-      className={`group/link inline-flex border rounded-2xl px-4 py-2  hover:bg-sky-300 items-center gap-1.5 text-sm font-semibold text-primary transition-colors hover:text-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 ${className ?? ""}`}
+      className={`group/link inline-flex items-center gap-1.5 text-sm font-semibold text-primary transition-colors hover:text-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 ${className ?? ""}`}
     >
-      View all categories
+      View all 18 categories
       <ArrowRightIcon
         className="size-4 transition-transform duration-200 group-hover/link:translate-x-0.5"
         aria-hidden="true"
@@ -88,7 +88,7 @@ export function BrowseByType() {
           <ViewAllLink className="hidden pb-1.5 md:inline-flex" />
         </div>
 
-        <ul className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-5 min-[900px]">
+        <ul className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {productionTypes.map(({ name, stat, slug, icon: Icon }) => (
             <li key={slug}>
               <Link

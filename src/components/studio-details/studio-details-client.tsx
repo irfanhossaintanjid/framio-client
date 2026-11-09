@@ -12,7 +12,6 @@ import {
   ChevronRightIcon,
   Clock3Icon,
   CopyIcon,
-  HeartIcon,
   ImageOffIcon,
   MapPinIcon,
   Maximize2Icon,
@@ -26,12 +25,14 @@ import {
 } from "lucide-react";
 import { toast } from "@/components/ui/toast";
 import { BookingCard } from "@/components/booking/bookingCard";
+import { SaveButton } from "@/components/studios/save-button";
 import {
   amenityGroups,
   cityFromAddress,
   formatMoney,
   galleryForStudio,
   numberValue,
+  studioId,
   studioTypeLabel,
 } from "@/lib/studio-details";
 
@@ -108,9 +109,7 @@ function Gallery({ studio }: { studio: StudioDetails }) {
   );
 }
 
-function HeaderActions({ studio: _studio }: { studio: StudioDetails }) {
-  void _studio;
-  const [saved, setSaved] = useState(false);
+function HeaderActions({ studio }: { studio: StudioDetails }) {
   async function share() {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -136,17 +135,12 @@ function HeaderActions({ studio: _studio }: { studio: StudioDetails }) {
       >
         <Share2Icon className="size-3.5" /> Share
       </button>
-      <button
-        type="button"
-        aria-pressed={saved}
-        onClick={() => setSaved(!saved)}
-        className="inline-flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-xs font-semibold text-foreground hover:bg-accent"
-      >
-        <HeartIcon
-          className={`size-3.5 ${saved ? "fill-primary text-primary" : ""}`}
-        />{" "}
-        Save
-      </button>
+      <SaveButton
+        studioId={studioId(studio)}
+        initialSaved={studio.isSaved}
+        variant="inline"
+        showLabel
+      />
     </div>
   );
 }
