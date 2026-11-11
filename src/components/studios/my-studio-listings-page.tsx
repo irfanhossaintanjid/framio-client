@@ -19,10 +19,6 @@ import { toast } from "@/components/ui/toast";
 import { formatMoney, numberValue, studioId } from "@/lib/studio-details";
 import type { StudioDetails } from "@/lib/types/page";
 
-const apiBaseUrl = (
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
-).replace(/\/+$/, "");
-
 function formatRating(value?: string | number) {
   const rating = Number(value);
   return Number.isFinite(rating) && rating > 0 ? rating.toFixed(2) : "New";
@@ -156,8 +152,8 @@ export function MyStudioListingsPage() {
   useEffect(() => {
     if (sessionPending || !email) return;
     const controller = new AbortController();
-    fetch(`${apiBaseUrl}/my-studios/${encodeURIComponent(email)}`, {
-      credentials: "omit",
+    fetch("/api/my-listings", {
+      credentials: "include",
       signal: controller.signal,
     })
       .then(async (response) => {
@@ -191,15 +187,10 @@ export function MyStudioListingsPage() {
     setDeleting(true);
     try {
       const id = studioId(deleteTarget);
-      const response = await fetch(
-        `${apiBaseUrl}/studio/${encodeURIComponent(id)}`,
-        {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          credentials: "omit",
-          body: JSON.stringify({ ownerEmail: email }),
-        },
-      );
+      const response = await fetch(`/api/studios/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
       if (!response.ok) {
         throw new Error(
           (await response.json().catch(() => null))?.error ??

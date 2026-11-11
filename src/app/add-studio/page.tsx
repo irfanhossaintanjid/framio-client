@@ -88,10 +88,6 @@ const fieldClassName =
   "h-10 w-full min-w-0 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-3 focus:ring-primary/15"
 
 const helperClassName = "mt-1.5 text-xs leading-relaxed text-muted-foreground"
-const apiBaseUrl = (
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
-).replace(/\/+$/, "")
-
 function Field({
   id,
   label,
@@ -210,6 +206,8 @@ type Studio = {
   coverImageUrl?: string
   amenities?: string[]
   description?: string
+  ownerName?: string
+  ownerEmail?: string
   hostName?: string
   hostEmail?: string
 }
@@ -224,6 +222,8 @@ export default function AddStudioForm() {
   const [selectedCategory, setSelectedCategory] = useState("Photo Studio")
   const [coverUrl, setCoverUrl] = useState("")
   const [previewUrl, setPreviewUrl] = useState("")
+  const [selectedImage, setSelectedImage] = useState<File | null>(null)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -234,8 +234,8 @@ export default function AddStudioForm() {
     async function loadStudio() {
       try {
         const response = await fetch(
-          `${apiBaseUrl}/studio/${encodeURIComponent(listingId)}`,
-          { credentials: "omit", signal: controller.signal },
+          `/api/studios/${encodeURIComponent(listingId)}`,
+          { credentials: "include", signal: controller.signal },
         )
 
         if (!response.ok) {
@@ -268,6 +268,41 @@ export default function AddStudioForm() {
     return () => controller.abort()
   }, [studioId])
 
+  async function uploadCoverImage() {
+    if (!selectedImage) {
+      toast.add({ title: "Choose an image", description: "Select an image file first.", type: "error" })
+      return
+    }
+
+    setIsUploadingImage(true)
+    try {
+      const formData = new FormData()
+      formData.set("image", selectedImage)
+      const response = await fetch("/api/upload-image", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      })
+      const result = await response.json().catch(() => null)
+      if (!response.ok || typeof result?.url !== "string") {
+        throw new Error(result?.error ?? "Unable to upload this image.")
+      }
+
+      setCoverUrl(result.url)
+      setPreviewUrl(result.url)
+      setSelectedImage(null)
+      toast.add({ title: "Image uploaded", description: "The studio cover image is ready.", type: "success" })
+    } catch (error) {
+      toast.add({
+        title: "Image upload failed",
+        description: error instanceof Error ? error.message : "Please try again.",
+        type: "error",
+      })
+    } finally {
+      setIsUploadingImage(false)
+    }
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -287,13 +322,11 @@ export default function AddStudioForm() {
 
     try {
       const res = await fetch(
-        studioId
-          ? `${apiBaseUrl}/studio/${encodeURIComponent(studioId)}`
-          : `${apiBaseUrl}/add-studios`,
+        studioId ? `/api/studios/${encodeURIComponent(studioId)}` : "/api/studios",
         {
           method: studioId ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "omit",
+          credentials: "include",
           body: JSON.stringify(studioData),
         },
       )
@@ -378,12 +411,12 @@ export default function AddStudioForm() {
             <LockedHostField
               id="host-name"
               label="Host Full Name"
-              value={studio?.hostName ?? session?.user.name ?? ""}
+              value={studio?.ownerName ?? session?.user.name ?? ""}
             />
             <LockedHostField
               id="host-email"
               label="Host Email Address"
-              value={studio?.hostEmail ?? session?.user.email ?? ""}
+              value={studio?.ownerEmail ?? session?.user.email ?? ""}
             />
           </div>
         </Card>
@@ -582,8 +615,25 @@ export default function AddStudioForm() {
             description="High-resolution imagery converts 3.4x more film & photo bookings"
             badge="4 Images Added"
           />
-          <Field id="cover-image-url" label="Primary Cover Image URL" required>
-            <div className="flex flex-col gap-2 sm:flex-row">
+          <Field id="cover-image-url" label="Primary Cover Image" required helper="Upload an image up to 10 MB, or paste an existing image URL.">
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+              <input
+                id="cover-image-file"
+                type="file"
+                accept="image/*"
+                onChange={(event) => setSelectedImage(event.target.files?.[0] ?? null)}
+                className={`${fieldClassName} h-auto py-2`}
+              />
+              <button
+                type="button"
+                onClick={() => void uploadCoverImage()}
+                disabled={!selectedImage || isUploadingImage}
+                className="h-10 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isUploadingImage ? "Uploading..." : "Upload Image"}
+              </button>
+            </div>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
               <input
                 id="cover-image-url"
                 name="coverImageUrl"

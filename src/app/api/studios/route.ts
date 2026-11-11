@@ -1,5 +1,6 @@
 import { auth, db } from "@/lib/auth"
 import { getStudiosWithSavedState } from "@/lib/wishlist-server"
+import { forwardStudioRequest, getStudioAuth, isStudioAuthResponse } from "@/lib/studio-api-server"
 
 export async function GET(request: Request) {
   try {
@@ -17,4 +18,18 @@ export async function GET(request: Request) {
     console.error("Failed to load studios:", error)
     return Response.json({ error: "Unable to load studios" }, { status: 500 })
   }
+}
+
+export async function POST(request: Request) {
+  const user = await getStudioAuth(request)
+  if (isStudioAuthResponse(user)) return user
+
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return Response.json({ error: "Invalid studio request body." }, { status: 400 })
+  }
+
+  return forwardStudioRequest(user, "/add-studios", "POST", body)
 }
