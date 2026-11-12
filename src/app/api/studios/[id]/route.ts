@@ -9,9 +9,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth.api.getSession({ headers: request.headers })
-  if (!session?.user?.email) {
-    return Response.json({ error: "Please sign in to edit this studio." }, { status: 401 })
-  }
+  const userEmail = session?.user?.email
+  if (!userEmail) return Response.json({ error: "Please sign in to edit this studio." }, { status: 401 })
 
   const { id } = await params
   if (!ObjectId.isValid(id)) {
@@ -23,11 +22,10 @@ export async function GET(
     if (!studio) {
       return Response.json({ error: "Studio not found" }, { status: 404 })
     }
-    if (studio.ownerEmail?.trim().toLowerCase() !== session.user.email.trim().toLowerCase()) {
+    if (studio.ownerEmail?.trim().toLowerCase() !== userEmail.trim().toLowerCase()) {
       return Response.json({ error: "Studio not found" }, { status: 404 })
     }
 
-    const userEmail = session?.user?.email ?? null
     const [result] = await getStudiosWithSavedState([studio], userEmail)
     return Response.json(result)
   } catch (error) {

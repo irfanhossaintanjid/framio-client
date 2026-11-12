@@ -16,7 +16,8 @@ import {
 } from "lucide-react"
 import { FaGoogle } from "react-icons/fa6"
 
-import { toast } from "@/components/ui/toast"
+import { toast } from "react-toastify"
+import { ToastMessage } from "@/components/toast-message"
 import { authClient } from "@/lib/auth-client"
 import { LoadingSpinner } from "@/components/ui/spinner"
 
@@ -47,6 +48,7 @@ export function RegisterForm() {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false)
   const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({})
 
   const passedRules = passwordRules.map((rule) => ({
@@ -107,43 +109,49 @@ export function RegisterForm() {
       })
 
       if (error) {
-        toast.add({
-          title: "Registration failed",
-          description: error.message,
-          type: "error",
-        })
+        toast.error(<ToastMessage title="Registration failed" description={error.message} />)
         return
       }
 
       if (!data) {
-        toast.add({
-          title: "Registration failed",
-          description: "The server returned no account confirmation.",
-          type: "error",
-        })
+        toast.error(<ToastMessage title="Registration failed" description="The server returned no account confirmation." />)
         return
       }
 
-      router.replace("/")
+      router.replace("/login")
       router.refresh()
     } catch (error) {
       console.error("Registration error:", error)
-      toast.add({
-        title: "Registration failed",
-        description: "Something went wrong. Please try again.",
-        type: "error",
-      })
+      toast.error(<ToastMessage title="Registration failed" description="Something went wrong. Please try again." />)
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  function showUnavailableMessage() {
-    toast.add({
-      title: "Google sign-up unavailable",
-      description: "Please create your account with email and password.",
-      type: "error",
-    })
+  async function handleGoogleSignUp() {
+    if (isSubmitting || isGoogleSubmitting) return
+
+    setIsGoogleSubmitting(true)
+    try {
+      const { data, error } = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/",
+      })
+
+      if (error) {
+        toast.error(<ToastMessage title="Google sign-up failed" description={error.message} />)
+        return
+      }
+
+      if (!data?.url) {
+        toast.error(<ToastMessage title="Google sign-up failed" description="The authentication server did not return a Google sign-up URL." />)
+      }
+    } catch (error) {
+      console.error("Google sign-up error:", error)
+      toast.error(<ToastMessage title="Google sign-up failed" description={error instanceof Error ? error.message : "Something went wrong. Please try again."} />)
+    } finally {
+      setIsGoogleSubmitting(false)
+    }
   }
 
   return (
@@ -177,12 +185,12 @@ export function RegisterForm() {
 
           <button
             type="button"
-            onClick={showUnavailableMessage}
-            disabled={isSubmitting}
+            onClick={() => void handleGoogleSignUp()}
+            disabled={isSubmitting || isGoogleSubmitting}
             className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-border bg-secondary text-sm font-semibold text-secondary-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
           >
             <FaGoogle className="size-4 text-[#4285f4]" aria-hidden="true" />
-            Continue with Google
+            {isGoogleSubmitting ? <><LoadingSpinner size="sm" label="Connecting to Google" />Connecting to Google…</> : "Continue with Google"}
           </button>
 
           <div className="my-4 flex items-center gap-2.5">

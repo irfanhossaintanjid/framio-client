@@ -6,10 +6,12 @@ import {
   ArrowRightIcon,
   Clock3Icon,
   InfoIcon,
+  Loader2Icon,
   XIcon,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
-import { toast } from "@/components/ui/toast";
+import { toast } from "react-toastify";
+import { ToastMessage } from "@/components/toast-message";
 import { formatMoney, numberValue, studioId } from "@/lib/studio-details";
 import type { StudioDetails } from "@/lib/types/page";
 
@@ -52,28 +54,16 @@ export function BookingCard({ studio }: { studio: StudioDetails }) {
   };
   async function beginBooking() {
     if (owner)
-      return toast.add({
-        title: "Your own listing",
-        description: "You cannot book your own studio.",
-        type: "info",
-      });
+      return toast.info(<ToastMessage title="Your own listing" description="You cannot book your own studio." />);
     if (!session) {
-      toast.add({
-        title: "Please log in",
-        description: "Please log in to book this space.",
-        type: "info",
-      });
+      toast.info(<ToastMessage title="Please log in" description="Please log in to book this space." />);
       router.push(
         `/login?redirect=/studios/${encodeURIComponent(studioId(studio))}`,
       );
       return;
     }
     if (hours < minHours)
-      return toast.add({
-        title: "Choose a longer booking",
-        description: `This studio requires at least ${minHours} hours.`,
-        type: "error",
-      });
+      return toast.error(<ToastMessage title="Choose a longer booking" description={`This studio requires at least ${minHours} hours.`} />);
     setOpen(true);
   }
   async function confirmBooking() {
@@ -93,14 +83,16 @@ export function BookingCard({ studio }: { studio: StudioDetails }) {
         }),
       });
       const responseData = await response.json().catch(() => null);
-      if (response.status === 409)
-        throw new Error(responseData?.message ?? "This time slot is already booked.");
+      if (response.status === 409) {
+        setOpen(false);
+        throw new Error(
+          responseData?.error ??
+            responseData?.message ??
+            "This time slot is already reserved. Choose another date or time.",
+        );
+      }
       if (response.status === 401) {
-        toast.add({
-          title: "Session expired",
-          description: "Please log in again.",
-          type: "error",
-        });
+        toast.error(<ToastMessage title="Session expired" description="Please log in again." />);
         router.push(
           `/login?redirect=/studios/${encodeURIComponent(studioId(studio))}`,
         );
@@ -108,20 +100,11 @@ export function BookingCard({ studio }: { studio: StudioDetails }) {
       }
       if (!response.ok)
         throw new Error(responseData?.error ?? responseData?.message ?? "Booking failed.");
-      toast.add({
-        title: "Booking request sent!",
-        description: "The host will review your production request.",
-        type: "success",
-      });
+      toast.success(<ToastMessage title="Booking confirmed!" description="Your workspace reservation is confirmed." />);
       setOpen(false);
       router.push("/my-bookings");
     } catch (error) {
-      toast.add({
-        title: "Booking failed",
-        description:
-          error instanceof Error ? error.message : "Please try again.",
-        type: "error",
-      });
+      toast.error(<ToastMessage title="Booking failed" description={error instanceof Error ? error.message : "Please try again."} />);
     } finally {
       setSubmitting(false);
     }
@@ -248,8 +231,7 @@ export function BookingCard({ studio }: { studio: StudioDetails }) {
             <ArrowRightIcon className="size-4" />
           </button>
           <p className="text-center text-[0.625rem] text-muted-foreground">
-            You won&apos;t be charged yet. Instant confirmation upon host
-            availability.
+            Your reservation is confirmed immediately. No payment is collected here.
           </p>
           {/* <div className="flex justify-center gap-3 text-[0.625rem] font-semibold text-muted-foreground">
             <span>◉ Free cancellation (48h)</span>
@@ -309,7 +291,7 @@ export function BookingCard({ studio }: { studio: StudioDetails }) {
                 onClick={() => void confirmBooking()}
                 className="h-10 flex-1 rounded-lg bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-50"
               >
-                {submitting ? "Sending…" : "Confirm Request"}
+                {submitting ? <><Loader2Icon className="mr-2 inline size-4 animate-spin" aria-hidden="true" />Submitting…</> : "Confirm Request"}
               </button>
             </div>
           </div>

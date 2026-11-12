@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -14,8 +13,10 @@ import {
   UsersIcon,
   XIcon,
 } from "lucide-react";
+import { ImageWithLoader } from "@/components/ui/image-with-loader";
 import { authClient } from "@/lib/auth-client";
-import { toast } from "@/components/ui/toast";
+import { toast } from "react-toastify";
+import { ToastMessage } from "@/components/toast-message";
 import { formatMoney, numberValue, studioId } from "@/lib/studio-details";
 import type { StudioDetails } from "@/lib/types/page";
 
@@ -56,7 +57,7 @@ function ListingCard({
   return (
     <article className="grid gap-4 rounded-xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5 lg:grid-cols-[240px_minmax(0,1fr)_160px] lg:items-center">
       <div className="relative aspect-[16/10] overflow-hidden rounded-lg bg-secondary">
-        <Image
+        <ImageWithLoader
           src={studio.coverImageUrl ?? "/images/hero/daylight-studio.jpg"}
           alt={studio.title ? `${studio.title} cover` : "Studio cover"}
           fill
@@ -153,9 +154,9 @@ export function MyStudioListingsPage() {
     if (sessionPending || !email) return;
     const controller = new AbortController();
     fetch("/api/my-listings", {
-      credentials: "include",
-      signal: controller.signal,
-    })
+        credentials: "include",
+        signal: controller.signal,
+      })
       .then(async (response) => {
         if (!response.ok) {
           throw new Error(
@@ -201,20 +202,14 @@ export function MyStudioListingsPage() {
         current.filter((studio) => studioId(studio) !== id),
       );
       setDeleteTarget(null);
-      toast.add({
-        title: "Studio deleted",
-        description: "Your studio listing was deleted successfully. ",
-        type: "success",
-      });
+      toast.success(<ToastMessage title="Studio deleted" description="Your studio listing was deleted successfully." />);
     } catch (deleteError) {
-      toast.add({
-        title: "Delete failed",
-        description:
-          deleteError instanceof Error
-            ? deleteError.message
-            : "Please try again.",
-        type: "error",
-      });
+      toast.error(
+        <ToastMessage
+          title="Delete failed"
+          description={deleteError instanceof Error ? deleteError.message : "Please try again."}
+        />,
+      );
     } finally {
       setDeleting(false);
     }
@@ -380,7 +375,7 @@ export function MyStudioListingsPage() {
                 onClick={() => void deleteStudio()}
                 className="rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground disabled:opacity-60"
               >
-                {deleting ? "Deleting..." : "Delete Studio"}
+                {deleting ? <><span className="mr-2 inline-block size-4 animate-spin rounded-full border-2 border-current border-r-transparent align-[-3px]" aria-hidden="true" />Deleting...</> : "Delete Studio"}
               </button>
             </div>
           </div>

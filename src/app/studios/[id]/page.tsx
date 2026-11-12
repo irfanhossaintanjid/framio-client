@@ -5,6 +5,7 @@ import { StudioDetailsClient } from "@/components/studio-details/studio-details-
 import { auth } from "@/lib/auth"
 import { getSavedStudioIds } from "@/lib/wishlist-server"
 import type { StudioDetails } from "@/lib/types/page"
+ 
 
 const apiBaseUrl = (
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
@@ -16,6 +17,7 @@ async function getStudio(id: string, includeSaved = false) {
     `${apiBaseUrl}/studio/${encodeURIComponent(id)}`,
   )
 
+
   if (response.status === 400 || response.status === 404) notFound()
   if (!response.ok) {
     throw new Error(`Unable to load studio (${response.status}).`)
@@ -24,7 +26,9 @@ async function getStudio(id: string, includeSaved = false) {
   const studio = (await response.json()) as StudioDetails
   if (!includeSaved) return studio
 
-  const session = await auth.api.getSession({ headers: await headers() })
+  // Studio details are public; only wishlist state depends on the session cookie.
+  const requestHeaders = await headers()
+  const session = await auth.api.getSession({ headers: requestHeaders })
   const userEmail = session?.user?.email
   if (!userEmail) return { ...studio, isSaved: false }
 
@@ -50,6 +54,6 @@ export default async function StudioDetailsPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  const studio = await getStudio((await params).id)
+  const studio = await getStudio((await params).id, true)
   return <StudioDetailsClient studio={studio} />
 }

@@ -6,7 +6,8 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useStudioId } from "@/components/studio/studio-id-context"
 import { authClient } from "@/lib/auth-client"
-import { toast } from "@/components/ui/toast"
+import { toast } from "react-toastify"
+import { ToastMessage } from "@/components/toast-message"
 import { LoadingSpinner } from "@/components/ui/spinner"
 import {
   AudioLinesIcon,
@@ -222,8 +223,6 @@ export default function AddStudioForm() {
   const [selectedCategory, setSelectedCategory] = useState("Photo Studio")
   const [coverUrl, setCoverUrl] = useState("")
   const [previewUrl, setPreviewUrl] = useState("")
-  const [selectedImage, setSelectedImage] = useState<File | null>(null)
-  const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -268,41 +267,6 @@ export default function AddStudioForm() {
     return () => controller.abort()
   }, [studioId])
 
-  async function uploadCoverImage() {
-    if (!selectedImage) {
-      toast.add({ title: "Choose an image", description: "Select an image file first.", type: "error" })
-      return
-    }
-
-    setIsUploadingImage(true)
-    try {
-      const formData = new FormData()
-      formData.set("image", selectedImage)
-      const response = await fetch("/api/upload-image", {
-        method: "POST",
-        credentials: "include",
-        body: formData,
-      })
-      const result = await response.json().catch(() => null)
-      if (!response.ok || typeof result?.url !== "string") {
-        throw new Error(result?.error ?? "Unable to upload this image.")
-      }
-
-      setCoverUrl(result.url)
-      setPreviewUrl(result.url)
-      setSelectedImage(null)
-      toast.add({ title: "Image uploaded", description: "The studio cover image is ready.", type: "success" })
-    } catch (error) {
-      toast.add({
-        title: "Image upload failed",
-        description: error instanceof Error ? error.message : "Please try again.",
-        type: "error",
-      })
-    } finally {
-      setIsUploadingImage(false)
-    }
-  }
-
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -339,19 +303,21 @@ export default function AddStudioForm() {
         )
       }
 
-      toast.add({
-        title: `Studio ${studioId ? "updated" : "created"}`,
-        description: `Your studio was ${studioId ? "updated" : "created"} successfully.`,
-        type: "success",
-      })
+      toast.success(
+        <ToastMessage
+          title={`Studio ${studioId ? "updated" : "created"}`}
+          description={`Your studio was ${studioId ? "updated" : "created"} successfully.`}
+        />,
+      )
       router.push("/my-listings")
     } catch (error) {
       console.error(`Failed to ${studioId ? "update" : "create"} studio:`, error)
-      toast.add({
-        title: `Unable to ${studioId ? "update" : "create"} studio`,
-        description: error instanceof Error ? error.message : "Please try again.",
-        type: "error",
-      })
+      toast.error(
+        <ToastMessage
+          title={`Unable to ${studioId ? "update" : "create"} studio`}
+          description={error instanceof Error ? error.message : "Please try again."}
+        />,
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -508,6 +474,7 @@ export default function AddStudioForm() {
                     type="number"
                     min="0"
                     step="0.01"
+                    required
                     defaultValue={studio?.hourlyRate ?? ""}
                     className={`${fieldClassName} pr-16`}
                   />
@@ -611,35 +578,19 @@ export default function AddStudioForm() {
         <Card>
           <SectionHeader
             letter="D"
-            title="Media & Photography Showcase"
-            description="High-resolution imagery converts 3.4x more film & photo bookings"
-            badge="4 Images Added"
+            title="Cover Image"
+            description="Add a public image URL for your studio listing"
+            badge="Image URL"
           />
-          <Field id="cover-image-url" label="Primary Cover Image" required helper="Upload an image up to 10 MB, or paste an existing image URL.">
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-              <input
-                id="cover-image-file"
-                type="file"
-                accept="image/*"
-                onChange={(event) => setSelectedImage(event.target.files?.[0] ?? null)}
-                className={`${fieldClassName} h-auto py-2`}
-              />
-              <button
-                type="button"
-                onClick={() => void uploadCoverImage()}
-                disabled={!selectedImage || isUploadingImage}
-                className="h-10 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isUploadingImage ? "Uploading..." : "Upload Image"}
-              </button>
-            </div>
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <Field id="cover-image-url" label="Primary Cover Image URL" required helper="Paste a publicly accessible image URL.">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <input
                 id="cover-image-url"
                 name="coverImageUrl"
                 type="url"
                 value={coverUrl}
                 onChange={(event) => setCoverUrl(event.target.value)}
+                placeholder="https://example.com/studio-photo.jpg"
                 className={fieldClassName}
                 required
               />

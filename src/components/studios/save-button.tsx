@@ -1,9 +1,10 @@
 "use client"
 
-import { HeartIcon } from "lucide-react"
+import { HeartIcon, Loader2Icon } from "lucide-react"
 import { useState } from "react"
 
-import { toast } from "@/components/ui/toast"
+import { toast } from "react-toastify"
+import { ToastMessage } from "@/components/toast-message"
 import { authClient } from "@/lib/auth-client"
 
 export function SaveButton({
@@ -27,11 +28,7 @@ export function SaveButton({
     if (isSaving) return
 
     if (sessionPending || !session?.user?.email) {
-      toast.add({
-        title: "Log in to save studios",
-        description: "Sign in to keep this studio in your wishlist.",
-        type: "info",
-      })
+      toast.info(<ToastMessage title="Log in to save studios" description="Sign in to keep this studio in your wishlist." />)
       return
     }
 
@@ -58,11 +55,7 @@ export function SaveButton({
     } catch (error) {
       setSaved(!nextSaved)
       onSavedChange?.(!nextSaved)
-      toast.add({
-        title: "Unable to update saved studios",
-        description: error instanceof Error ? error.message : "Please try again.",
-        type: "error",
-      })
+      toast.error(<ToastMessage title="Unable to update saved studios" description={error instanceof Error ? error.message : "Please try again."} />)
     } finally {
       setIsSaving(false)
     }
@@ -85,11 +78,15 @@ export function SaveButton({
           : "inline-flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-wait disabled:opacity-70"
       }
     >
-      <HeartIcon
-        className={`size-4 transition-colors ${saved ? "fill-primary text-primary" : ""}`}
-        aria-hidden="true"
-      />
-      {showLabel ? "Save" : null}
+      {isSaving ? (
+        <Loader2Icon className="size-4 animate-spin" aria-hidden="true" />
+      ) : (
+        <HeartIcon
+          className={`size-4 transition-colors ${saved ? "fill-primary text-primary" : ""}`}
+          aria-hidden="true"
+        />
+      )}
+      {showLabel ? (isSaving ? "Saving…" : "Save") : null}
     </button>
   )
 }

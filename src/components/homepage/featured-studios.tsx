@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import {
   ArrowRightIcon,
@@ -14,6 +13,7 @@ import { useEffect, useMemo, useState } from "react"
 
 import type { Studio } from "@/lib/types/page"
 import { SaveButton } from "@/components/studios/save-button"
+import { ImageWithLoader } from "@/components/ui/image-with-loader"
 
 
 
@@ -92,7 +92,7 @@ function StudioImage({ studio }: { studio: Studio }) {
   }
 
   return (
-    <Image
+    <ImageWithLoader
       src={studio.coverImageUrl}
       alt={studio.title ? `${studio.title} studio` : "Studio cover image"}
       fill

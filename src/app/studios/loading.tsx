@@ -1,9 +1,5 @@
-import { LoadingSpinner } from "@/components/ui/spinner"
+import { PageLoading } from "@/components/ui/page-loading"
 
 export default function StudiosLoading() {
-  return (
-    <div className="flex min-h-[50dvh] items-center justify-center bg-background px-4 text-foreground">
-      <LoadingSpinner size="lg" label="Loading studios" />
-    </div>
-  )
+  return <PageLoading label="Loading studios" />
 }

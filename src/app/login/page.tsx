@@ -17,8 +17,29 @@ import {
 import { FaGoogle } from "react-icons/fa6"
 import { useRouter } from "next/navigation";
 import { authClient } from "../../lib/auth-client";
-import { toast } from "@/components/ui/toast"
+import { toast } from "react-toastify"
+import { ToastMessage } from "@/components/toast-message"
 import { LoadingSpinner } from "@/components/ui/spinner"
+
+function getSafeRedirectPath() {
+  const requestedPath = new URLSearchParams(window.location.search).get("redirect")
+
+  if (
+    !requestedPath ||
+    !requestedPath.startsWith("/") ||
+    requestedPath.startsWith("//") ||
+    requestedPath.includes("\\")
+  ) {
+    return "/"
+  }
+
+  const target = new URL(requestedPath, window.location.origin)
+  return target.origin === window.location.origin
+    ? `${target.pathname}${target.search}${target.hash}`
+    : "/"
+}
+
+
 
 
 
@@ -27,20 +48,14 @@ export default function LoginPage() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
  
   
 
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (loading) {
-    return (
-       
-  <div className=" skeleton mx-auto flex h-52 max-w-6xl items-center justify-center">
-    <span className="loading loading-spinner w-16 text-gray-500" />
-  </div>
-    );
-  }
+    if (loading) return;
 
 
     const form = e.currentTarget;
@@ -55,35 +70,48 @@ export default function LoginPage() {
       });
 
       if (error) {
-        toast.add({
-          title: "Login failed",
-          description: error.message,
-          type: "error",
-        });
+        toast.error(<ToastMessage title="Login failed" description={error.message} />);
         return;
       }
 
       if (!data) {
-        toast.add({
-          title: "Login failed",
-          description: "The server returned no account session.",
-          type: "error",
-        });
+        toast.error(<ToastMessage title="Login failed" description="The server returned no account session." />);
         return;
       }
 
-      // Redirect to Home Page
-      router.replace("/");
+      router.replace(getSafeRedirectPath());
       router.refresh();
     } catch (error) {
       console.error("Login Error:", error);
-      toast.add({
-        title: "Login failed",
-        description: "Something went wrong. Please try again.",
-        type: "error",
-      });
+      toast.error(<ToastMessage title="Login failed" description="Something went wrong. Please try again." />);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    if (googleLoading || loading) return;
+
+    setGoogleLoading(true);
+    try {
+      const { data, error } = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: getSafeRedirectPath(),
+      });
+
+      if (error) {
+        toast.error(<ToastMessage title="Google sign-in failed" description={error.message} />);
+        return;
+      }
+
+      if (!data?.url) {
+        toast.error(<ToastMessage title="Google sign-in failed" description="The authentication server did not return a Google sign-in URL." />);
+      }
+    } catch (error) {
+      console.error("Google sign-in error:", error);
+      toast.error(<ToastMessage title="Google sign-in failed" description={error instanceof Error ? error.message : "Something went wrong. Please try again."} />);
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -120,18 +148,12 @@ export default function LoginPage() {
 
             <button
               type="button"
-              onClick={() =>
-                toast.add({
-                  title: "Google login unavailable",
-                  description: "Please use email and password to log in.",
-                  type: "error",
-                })
-              }
-              disabled={loading}
+              onClick={handleGoogleSignIn}
+              disabled={loading || googleLoading}
               className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-border bg-background text-xs font-semibold text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
             >
               <FaGoogle className="size-3.5 text-[#4285f4]" aria-hidden="true" />
-              Continue with Google
+              {googleLoading ? <><LoadingSpinner size="sm" label="Connecting to Google" />Connecting to Google…</> : "Continue with Google"}
             </button>
 
             <div className="my-4 flex items-center gap-2.5">

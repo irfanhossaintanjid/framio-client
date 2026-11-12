@@ -23,9 +23,11 @@ import {
   WifiIcon,
   ZapIcon,
 } from "lucide-react";
-import { toast } from "@/components/ui/toast";
+import { toast } from "react-toastify";
+import { ToastMessage } from "@/components/toast-message";
 import { BookingCard } from "@/components/booking/bookingCard";
 import { SaveButton } from "@/components/studios/save-button";
+import { ImageWithLoader } from "@/components/ui/image-with-loader";
 import {
   amenityGroups,
   cityFromAddress,
@@ -60,7 +62,7 @@ function Gallery({ studio }: { studio: StudioDetails }) {
     );
   return (
     <div className="relative aspect-[16/9] overflow-hidden rounded-2xl bg-secondary">
-      <Image
+      <ImageWithLoader
         src={images[index]}
         alt={studio.title ? `${studio.title} studio` : "Studio photo"}
         fill
@@ -113,17 +115,9 @@ function HeaderActions({ studio }: { studio: StudioDetails }) {
   async function share() {
     try {
       await navigator.clipboard.writeText(window.location.href);
-      toast.add({
-        title: "Link copied",
-        description: "Studio link copied to your clipboard.",
-        type: "success",
-      });
+      toast.success(<ToastMessage title="Link copied" description="Studio link copied to your clipboard." />);
     } catch {
-      toast.add({
-        title: "Unable to share",
-        description: "Copy the page URL from your browser instead.",
-        type: "error",
-      });
+      toast.error(<ToastMessage title="Unable to share" description="Copy the page URL from your browser instead." />);
     }
   }
   return (

@@ -8,7 +8,6 @@ export const bookingStatuses = [
 ] as const
 
 export type BookingStatus = (typeof bookingStatuses)[number]
-export type BookingRole = "customer" | "host"
 export type BookingFilter = "All Bookings" | BookingStatus
 
 export type Booking = {

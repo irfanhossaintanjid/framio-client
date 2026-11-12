@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth"
+import { getServerBearerToken, isAuthError } from "@/lib/server-auth"
 
 const studioServerUrl = (
   process.env.FRAMIO_SERVER_URL ??
@@ -6,35 +6,18 @@ const studioServerUrl = (
   "http://localhost:8000"
 ).replace(/\/+$/, "")
 
-export type StudioAuth = {
-  email: string
-  name: string
-  image: string
+export async function getStudioAuth(request: Request): Promise<string | Response> {
+  const authorization = await getServerBearerToken(request)
+  if (isAuthError(authorization)) return authorization
+  return authorization
 }
 
-export async function getStudioAuth(request: Request): Promise<StudioAuth | Response> {
-  if (!process.env.FRAMIO_INTERNAL_API_SECRET) {
-    return Response.json({ error: "Studio services are not configured." }, { status: 503 })
-  }
-
-  const session = await auth.api.getSession({ headers: request.headers })
-  if (!session?.user?.email) {
-    return Response.json({ error: "Please sign in to manage studios." }, { status: 401 })
-  }
-
-  return {
-    email: session.user.email,
-    name: session.user.name ?? "",
-    image: session.user.image ?? "",
-  }
-}
-
-export function isStudioAuthResponse(value: StudioAuth | Response): value is Response {
+export function isStudioAuthResponse(value: string | Response): value is Response {
   return value instanceof Response
 }
 
 export async function forwardStudioRequest(
-  user: StudioAuth,
+  authorization: string,
   path: string,
   method: "GET" | "POST" | "PATCH" | "DELETE",
   body?: unknown,
@@ -44,10 +27,7 @@ export async function forwardStudioRequest(
       method,
       headers: {
         "Content-Type": "application/json",
-        "x-framio-internal-secret": process.env.FRAMIO_INTERNAL_API_SECRET ?? "",
-        "x-framio-user-email": user.email,
-        "x-framio-user-name": user.name,
-        "x-framio-user-image": user.image,
+        Authorization: authorization,
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       cache: "no-store",
@@ -62,3 +42,4 @@ export async function forwardStudioRequest(
     return Response.json({ error: "The studio service is temporarily unavailable." }, { status: 502 })
   }
 }
+

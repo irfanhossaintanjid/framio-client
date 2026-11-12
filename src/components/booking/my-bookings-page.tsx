@@ -1,12 +1,10 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
   CalendarDaysIcon,
   CalendarIcon,
-  CheckCircle2Icon,
   ChevronDownIcon,
   Clock3Icon,
   DownloadIcon,
@@ -16,8 +14,10 @@ import {
   SearchIcon,
   XIcon,
 } from "lucide-react"
+import { ImageWithLoader } from "@/components/ui/image-with-loader"
 
-import { toast } from "@/components/ui/toast"
+import { toast } from "react-toastify"
+import { ToastMessage } from "@/components/toast-message"
 import { authClient } from "@/lib/auth-client"
 import { downloadBookingInvoice } from "@/lib/booking-invoice"
 import type { Booking, BookingFilter } from "@/lib/booking-types"
@@ -169,7 +169,7 @@ function BookingCard({
     <article className="grid gap-4 rounded-xl border border-border/80 bg-card p-3.5 shadow-sm transition-all hover:border-primary/45 hover:bg-card-hover hover:shadow-md sm:p-4 lg:grid-cols-[minmax(210px,1.1fr)_minmax(300px,1.7fr)_190px] lg:items-center">
       <div className="flex min-w-0 gap-3">
         <div className="relative aspect-[16/10] w-28 shrink-0 overflow-hidden rounded-lg bg-secondary sm:w-36 lg:w-28">
-          <Image
+          <ImageWithLoader
             src={booking.studio?.coverImageUrl ?? booking.coverImageUrl ?? "/images/hero/daylight-studio.jpg"}
             alt={`${booking.studio?.title ?? booking.title ?? "Studio"} cover`}
             fill
@@ -238,8 +238,8 @@ function BookingCard({
         <div className="flex flex-wrap justify-end gap-2">
           {isPending ? (
             <>
-              <button type="button" disabled={busy} onClick={onConfirm} className="rounded-md bg-primary px-3 py-1.5 text-[0.6875rem] font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60">
-                Confirm
+              <button type="button" disabled={busy} onClick={onConfirm} className="rounded-md bg-primary px-3 py-1.5 text-[0.6875rem] font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover disabled:opacity-60">
+                Confirmed
               </button>
               <button type="button" disabled={busy} onClick={onCancel} className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-1.5 text-[0.6875rem] font-semibold text-destructive transition-colors hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 disabled:opacity-60">
                 Cancel Booking
@@ -248,7 +248,7 @@ function BookingCard({
           ) : null}
           {isConfirmed ? (
             <button type="button" onClick={onComplete} className="rounded-md bg-success px-3 py-1.5 text-[0.6875rem] font-semibold text-success-foreground shadow-sm transition-colors hover:bg-success/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success/50">
-              Complete
+              Completed
             </button>
           ) : null}
           {isConfirmed || isCompleted ? (
@@ -316,7 +316,7 @@ function BookingSection({
   return (
     <section className="mt-8">
       <header className="mb-4">
-        <h2 className="text-xl font-bold tracking-tight sm:text-2xl">{title}</h2>
+        
         <p className="mt-1 text-sm text-muted-foreground">{description}</p>
       </header>
       <div className="flex flex-col gap-2 rounded-xl border border-border/80 bg-card p-2 shadow-sm sm:p-3 lg:flex-row lg:items-center lg:justify-between">
@@ -334,7 +334,7 @@ function BookingSection({
             </button>
           ))}
         </div>
-        <div className="flex shrink-0 items-center justify-between gap-2 lg:justify-end">
+         <div className="flex shrink-0 items-center justify-between gap-2 lg:justify-end">
           <label className="relative flex min-w-0 items-center">
             <SearchIcon className="pointer-events-none absolute left-2.5 size-3.5 text-muted-foreground" />
             <span className="sr-only">Search {title}</span>
@@ -357,7 +357,7 @@ function BookingSection({
             </select>
             <ChevronDownIcon className="pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 text-muted-foreground" />
           </div>
-        </div>
+        </div> 
       </div>
       <p className="mt-5 text-sm text-muted-foreground">
         Showing <strong className="text-foreground">{visible.length}</strong> booking{visible.length === 1 ? "" : "s"}
@@ -381,8 +381,29 @@ function BookingSection({
           <CalendarDaysIcon className="mx-auto size-9 text-primary" />
           <h3 className="mt-3 font-bold">{bookings.length ? "No bookings in this status" : "No bookings yet"}</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Your studio booking requests will appear here.
+            {bookings.length
+              ? "Try another search or booking status to find your reservation."
+              : "Find a creative space for your next project and your reservations will appear here."}
           </p>
+          {bookings.length ? (
+            <button
+              type="button"
+              onClick={() => {
+                setFilter("All Bookings")
+                setSearch("")
+              }}
+              className="mt-5 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
+            >
+              Show All Bookings
+            </button>
+          ) : (
+            <Link
+              href="/studios"
+              className="mt-5 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
+            >
+              Explore Studios
+            </Link>
+          )}
         </div>
       )}
     </section>
@@ -396,7 +417,10 @@ export function MyBookingsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [retry, setRetry] = useState(0)
-  const [dialog, setDialog] = useState<{ type: "confirm" | "cancel" | "confirmed" | "complete"; booking?: Booking } | null>(null)
+  const [dialog, setDialog] = useState<{
+    type: "confirm" | "confirmed" | "cancel" | "complete"
+    booking?: Booking
+  } | null>(null)
   const [busyAction, setBusyAction] = useState<string | null>(null)
   const loadingRef = useRef(false)
 
@@ -444,9 +468,8 @@ export function MyBookingsPage() {
     }
   }, [loadBookings, retry])
 
-  async function changeStatus(action: "confirm" | "cancel" | "complete") {
-    const booking = dialog?.booking
-    if (!booking || busyAction) return
+  async function changeStatus(action: "confirm" | "cancel", booking: Booking) {
+    if (busyAction) return
     setBusyAction(`${action}:${booking._id}`)
     try {
       const response = await fetch(`/api/bookings/${encodeURIComponent(booking._id)}/${action}`, {
@@ -456,23 +479,23 @@ export function MyBookingsPage() {
       const data = await response.json().catch(() => null)
       if (!response.ok) throw new Error(data?.error ?? data?.message ?? `Unable to ${action} booking.`)
       const updated = normalizeBooking(data as Booking)
-      setReservations((items) => items.map((item) => item._id === updated._id ? updated : item))
+      setReservations((items) => items.map((item) =>
+        item._id === updated._id ? updated : item,
+      ))
       if (action === "confirm") {
         setDialog({ type: "confirmed", booking: updated })
-        toast.add({ title: "Booking confirmed", description: "The reservation is now confirmed.", type: "success" })
-      } else if (action === "complete") {
-        setDialog(null)
-        toast.add({ title: "Booking completed", description: "The booking has been marked as completed.", type: "success" })
+        toast.success(<ToastMessage title="Booking confirmed" description="The reservation is now confirmed." />)
       } else {
         setDialog(null)
-        toast.add({ title: "Booking cancelled", description: "The booking status is now Cancelled.", type: "success" })
+        toast.success(<ToastMessage title="Booking cancelled" description="The booking status is now Cancelled." />)
       }
     } catch (operationError) {
-      toast.add({
-        title: action === "confirm" ? "Confirmation failed" : action === "complete" ? "Completion failed" : "Cancellation failed",
-        description: operationError instanceof Error ? operationError.message : "Please try again.",
-        type: "error",
-      })
+      toast.error(
+        <ToastMessage
+          title={action === "confirm" ? "Confirmation failed" : "Cancellation failed"}
+          description={operationError instanceof Error ? operationError.message : "Please try again."}
+        />,
+      )
     } finally {
       setBusyAction(null)
     }
@@ -489,13 +512,14 @@ export function MyBookingsPage() {
       const data = await response.json().catch(() => null)
       if (!response.ok) throw new Error(data?.error ?? data?.message ?? "Unable to prepare invoice.")
       await downloadBookingInvoice(normalizeBooking(data as Booking))
-      toast.add({ title: "Invoice downloaded", description: "Your Framio invoice is ready.", type: "success" })
+      toast.success(<ToastMessage title="Invoice downloaded" description="Your Framio invoice is ready." />)
     } catch (invoiceError) {
-      toast.add({
-        title: "Invoice unavailable",
-        description: invoiceError instanceof Error ? invoiceError.message : "Please try again.",
-        type: "error",
-      })
+      toast.error(
+        <ToastMessage
+          title="Invoice unavailable"
+          description={invoiceError instanceof Error ? invoiceError.message : "Please try again."}
+        />,
+      )
     } finally {
       setBusyAction(null)
     }
@@ -549,7 +573,7 @@ export function MyBookingsPage() {
         ) : null}
         <BookingSection
           title="My Bookings"
-          description="Your studio booking requests and their current status."
+          description="Manage your studio reservations and track their status."
           busyAction={busyAction}
           bookings={reservations}
           onConfirm={(booking) => setDialog({ type: "confirm", booking })}
@@ -559,26 +583,6 @@ export function MyBookingsPage() {
         />
       </div>
 
-      {dialog?.type === "confirm" && dialog.booking ? (
-        <Dialog title="Confirm This Booking?" onClose={() => busyAction ? undefined : setDialog(null)}>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Confirming this request will move your booking from Pending to Confirmed.
-          </p>
-          <div className="mt-5 grid grid-cols-2 gap-3 rounded-xl bg-secondary p-3 text-xs">
-            <div className="col-span-2"><p className="text-muted-foreground">Studio</p><p className="mt-1 font-semibold">{dialog.booking.studio?.title ?? dialog.booking.title ?? "Studio"}</p></div>
-            <div><p className="text-muted-foreground">Booking date</p><p className="mt-1 font-semibold">{dateLabel(dialog.booking.date)}</p></div>
-            <div><p className="text-muted-foreground">Time</p><p className="mt-1 font-semibold">{timeLabel(dialog.booking.startTime)} – {timeLabel(dialog.booking.endTime)}</p></div>
-            <div><p className="text-muted-foreground">Total amount</p><p className="mt-1 font-semibold text-primary">{money(dialog.booking.totalAmount)}</p></div>
-          </div>
-          <div className="mt-5 flex justify-end gap-2">
-            <button type="button" disabled={Boolean(busyAction)} onClick={() => setDialog(null)} className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold">Keep Pending</button>
-            <button type="button" disabled={Boolean(busyAction)} onClick={() => void changeStatus("confirm")} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
-              {busyAction ? <Loader2Icon className="size-4 animate-spin" /> : null}{busyAction ? "Confirming..." : "Confirm"}
-            </button>
-          </div>
-        </Dialog>
-      ) : null}
-
       {dialog?.type === "cancel" && dialog.booking ? (
         <Dialog title="Cancel This Booking?" onClose={() => busyAction ? undefined : setDialog(null)}>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
@@ -586,25 +590,38 @@ export function MyBookingsPage() {
           </p>
           <div className="mt-5 flex justify-end gap-2">
             <button type="button" disabled={Boolean(busyAction)} onClick={() => setDialog(null)} className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold">Keep Booking</button>
-            <button type="button" disabled={Boolean(busyAction)} onClick={() => void changeStatus("cancel")} className="inline-flex items-center gap-2 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground disabled:opacity-60">
+            <button type="button" disabled={Boolean(busyAction)} onClick={() => void changeStatus("cancel", dialog.booking!)} className="inline-flex items-center gap-2 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground disabled:opacity-60">
               {busyAction ? <Loader2Icon className="size-4 animate-spin" /> : null}{busyAction ? "Cancelling..." : "Yes, Cancel Booking"}
             </button>
           </div>
         </Dialog>
       ) : null}
 
-      {dialog?.type === "confirmed" && dialog.booking ? (
-        <Dialog title="Booking Confirmed!" onClose={() => setDialog(null)}>
-          <div className="mt-5 flex flex-col items-center text-center">
-            <CheckCircle2Icon className="size-12 text-success" />
-            <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
-              Your reservation has been successfully confirmed. The booking details are now available for reference.
-            </p>
-            <p className="mt-3 text-xs font-semibold text-primary">#{dialog.booking.bookingReference ?? dialog.booking._id}</p>
+      {dialog?.type === "confirm" && dialog.booking ? (
+        <Dialog title="Confirm This Booking?" onClose={() => busyAction ? undefined : setDialog(null)}>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            Confirm this reservation for {dialog.booking.studio?.title ?? dialog.booking.title ?? "this studio"}? The booking status will change from Pending to Confirmed.
+          </p>
+          <div className="mt-5 flex justify-end gap-2">
+            <button type="button" disabled={Boolean(busyAction)} onClick={() => setDialog(null)} className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold">Keep Pending</button>
+            <button type="button" disabled={Boolean(busyAction)} onClick={() => void changeStatus("confirm", dialog.booking!)} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
+              {busyAction === `confirm:${dialog.booking._id}` ? <Loader2Icon className="size-4 animate-spin" /> : null}
+              {busyAction === `confirm:${dialog.booking._id}` ? "Confirming..." : "Confirm Booking"}
+            </button>
           </div>
-          <div className="mt-6 flex justify-end gap-2">
+        </Dialog>
+      ) : null}
+
+      {dialog?.type === "confirmed" && dialog.booking ? (
+        <Dialog title="Booking Confirmed" onClose={() => setDialog(null)}>
+          <div className="mt-4 rounded-xl bg-secondary p-4 text-center">
+            <p className="text-sm text-muted-foreground">The reservation is confirmed and its invoice is ready.</p>
+            <p className="mt-2 text-xs font-bold text-primary">#{dialog.booking.bookingReference ?? dialog.booking._id}</p>
+          </div>
+          <div className="mt-5 flex justify-end gap-2">
             <button type="button" disabled={Boolean(busyAction)} onClick={() => void downloadInvoice(dialog.booking!)} className="inline-flex items-center gap-2 rounded-lg border border-border bg-secondary px-4 py-2 text-sm font-semibold disabled:opacity-60">
-              {busyAction ? <Loader2Icon className="size-4 animate-spin" /> : <DownloadIcon className="size-4" />}Download PDF Invoice
+              {busyAction === `invoice:${dialog.booking._id}` ? <Loader2Icon className="size-4 animate-spin" /> : <DownloadIcon className="size-4" />}
+              Download PDF Invoice
             </button>
             <button type="button" onClick={() => setDialog(null)} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Confirmed</button>
           </div>
@@ -612,21 +629,20 @@ export function MyBookingsPage() {
       ) : null}
 
       {dialog?.type === "complete" && dialog.booking ? (
-        <Dialog title="Complete This Booking?" onClose={() => busyAction ? undefined : setDialog(null)}>
+        <Dialog title="Scheduled Session Completion" onClose={() => setDialog(null)}>
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-            Confirm that this studio booking has finished. Its status will change to Completed.
+            This reservation remains active through its scheduled end time. Framio will update its status to Completed after the session ends.
           </p>
-          <div className="mt-5 flex justify-end gap-2">
-            <button type="button" disabled={Boolean(busyAction)} onClick={() => setDialog(null)} className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold">
-              Keep Confirmed
-            </button>
-            <button type="button" disabled={Boolean(busyAction)} onClick={() => void changeStatus("complete")} className="inline-flex items-center gap-2 rounded-lg bg-success px-4 py-2 text-sm font-semibold text-success-foreground transition-colors hover:bg-success/85 disabled:opacity-60">
-              {busyAction ? <Loader2Icon className="size-4 animate-spin" /> : null}
-              {busyAction ? "Completing..." : "Complete Booking"}
-            </button>
+          <div className="mt-4 rounded-lg bg-secondary p-3 text-sm">
+            <p className="font-semibold">{dialog.booking.studio?.title ?? dialog.booking.title ?? "Studio"}</p>
+            <p className="mt-1 text-muted-foreground">{dateLabel(dialog.booking.date)} · {timeLabel(dialog.booking.startTime)}–{timeLabel(dialog.booking.endTime)}</p>
+          </div>
+          <div className="mt-5 flex justify-end">
+            <button type="button" onClick={() => setDialog(null)} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Understood</button>
           </div>
         </Dialog>
       ) : null}
+
     </main>
   )
 }

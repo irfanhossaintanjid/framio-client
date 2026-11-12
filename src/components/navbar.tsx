@@ -16,11 +16,13 @@ import {
   CalendarDaysIcon,
   HeartIcon,
   LayoutDashboardIcon,
+  Loader2Icon,
   LogOutIcon,
   MenuIcon,
   MoonIcon,
   PlusIcon,
   SunIcon,
+  XIcon,
 } from "lucide-react"
 
 import {
@@ -44,11 +46,13 @@ import {
 
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetHeader,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { toast } from "@/components/ui/toast"
+import { toast } from "react-toastify"
+import { ToastMessage } from "@/components/toast-message"
 
 // ==========================================
 // Navigation Configuration
@@ -294,27 +298,27 @@ function NavigationLinks({
 function MobileAccountLogout({
   handleSignoout,
   onClose,
+  isLoggingOut,
 }: {
   handleSignoout: () => void
   onClose: () => void
+  isLoggingOut: boolean
 }) {
   return (
     <>
       {/* Logout */}
       <button
         type="button"
+        disabled={isLoggingOut}
         onClick={() => {
           onClose()
           handleSignoout()
         }}
-        className="flex min-h-11 items-center gap-3 rounded-lg px-7 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
+        className="flex min-h-11 items-center gap-3 rounded-lg px-7 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-wait disabled:opacity-60"
       >
-        <LogOutIcon
-          className="size-4"
-          aria-hidden="true"
-        />
+        {isLoggingOut ? <Loader2Icon className="size-4 animate-spin" aria-hidden="true" /> : <LogOutIcon className="size-4" aria-hidden="true" />}
 
-        Logout
+        {isLoggingOut ? "Logging out…" : "Logout"}
       </button>
     </>
   )
@@ -415,6 +419,7 @@ function MobileAccountLinks({
 function MobileMenu({
   user,
   onLogout,
+  isLoggingOut,
   pathname,
   activeHash,
   onNavigate,
@@ -422,6 +427,7 @@ function MobileMenu({
 }: {
   user: NavbarUser | null | undefined
   onLogout?: () => void
+  isLoggingOut: boolean
   pathname: string
   activeHash: string
   onNavigate: (href: string) => void
@@ -453,23 +459,35 @@ function MobileMenu({
 
       <SheetContent
         side={tablet ? "top" : "left"}
+        showCloseButton={false}
         className={
           tablet
             ? "max-h-[calc(100dvh-4rem)] gap-0 overflow-y-auto border-border md:data-[side=top]:top-16 md:max-w-none"
             : "w-[min(22rem,90vw)] gap-0 overflow-y-auto border-border"
         }
       >
-        <SheetHeader>
-        {/* Account Navigation */}
-        <div>
+        <SheetHeader className="gap-3">
+          <div className="flex min-h-8 items-center justify-between">
+            <span className="text-sm font-semibold text-foreground">Menu</span>
+            <SheetClose
+              render={
+                <button
+                  type="button"
+                  aria-label="Close navigation menu"
+                  className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+              }
+            >
+              <XIcon className="size-4" aria-hidden="true" />
+            </SheetClose>
+          </div>
           <MobileAccountLinks
             user={user}
             onClose={closeMenu}
             pathname={pathname}
             activeHash={activeHash}
-            />
-        </div>
-            </SheetHeader>
+          />
+        </SheetHeader>
         {/* Main Navigation */}
         <nav
           aria-label={
@@ -495,6 +513,7 @@ function MobileMenu({
           <MobileAccountLogout
             handleSignoout={onLogout ?? (() => {})}
             onClose={closeMenu}
+            isLoggingOut={isLoggingOut}
             />
         </div>
 
@@ -513,6 +532,7 @@ export function Navbar({
 }: ResponsiveNavbarProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
    const {data:session} = authClient.useSession()
 
    const user = session?.user
@@ -520,8 +540,14 @@ export function Navbar({
      : undefined
 
   async function handleLogout() {
+    if (isLoggingOut) return
+    setIsLoggingOut(true)
     if (onLogout) {
-      onLogout()
+      try {
+        onLogout()
+      } finally {
+        setIsLoggingOut(false)
+      }
       return
     }
 
@@ -529,11 +555,8 @@ export function Navbar({
       const { error } = await authClient.signOut()
 
       if (error) {
-        toast.add({
-          title: "Logout failed",
-          description: error.message,
-          type: "error",
-        })
+        toast.error(<ToastMessage title="Logout failed" description={error.message} />)
+        setIsLoggingOut(false)
         return
       }
 
@@ -541,11 +564,8 @@ export function Navbar({
       router.refresh()
     } catch (error) {
       console.error("Logout error:", error)
-      toast.add({
-        title: "Logout failed",
-        description: "Something went wrong. Please try again.",
-        type: "error",
-      })
+      toast.error(<ToastMessage title="Logout failed" description="Something went wrong. Please try again." />)
+      setIsLoggingOut(false)
     }
   }
 
@@ -694,10 +714,11 @@ export function Navbar({
 
                 <DropdownMenuItem
                   variant="destructive"
+                  disabled={isLoggingOut}
                   onClick={() => void handleLogout()}
                 >
-                  <LogOutIcon aria-hidden="true" />
-                  Logout
+                  {isLoggingOut ? <Loader2Icon className="animate-spin" aria-hidden="true" /> : <LogOutIcon aria-hidden="true" />}
+                  {isLoggingOut ? "Logging out…" : "Logout"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -741,6 +762,7 @@ export function Navbar({
           <MobileMenu
             user={user}
             onLogout={handleLogout}
+            isLoggingOut={isLoggingOut}
             pathname={pathname}
             activeHash={activeHash}
             onNavigate={handleNavigate}
@@ -759,6 +781,7 @@ export function Navbar({
           <MobileMenu
             user={user}
             onLogout={handleLogout}
+            isLoggingOut={isLoggingOut}
             pathname={pathname}
             activeHash={activeHash}
             onNavigate={handleNavigate}

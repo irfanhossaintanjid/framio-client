@@ -10,7 +10,7 @@ export async function GET(request: Request) {
 
   return forwardStudioRequest(
     user,
-    `/my-studios/${encodeURIComponent(user.email)}`,
+    "/my-studios",
     "GET",
   )
 }

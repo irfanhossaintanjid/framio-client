@@ -8,13 +8,7 @@ export async function GET(request: Request) {
   const authContext = await getBookingAuth(request)
   if (isBookingResponse(authContext)) return authContext
 
-  const scope = new URL(request.url).searchParams.get("scope")
-  const path =
-    scope === "host"
-      ? `/host-bookings/${encodeURIComponent(authContext.email)}`
-      : `/my-booking/${encodeURIComponent(authContext.email)}`
-
-  return forwardBookingRequest(authContext, path, { method: "GET" })
+  return forwardBookingRequest(authContext, "/my-booking", { method: "GET" })
 }
 
 export async function POST(request: Request) {
