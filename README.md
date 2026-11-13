@@ -1,69 +1,101 @@
 # Framio — Creative Studio Marketplace
 
-Framio helps creators discover, compare, and book photography studios, film stages, podcast rooms, music suites, and other creative workspaces. Studio hosts can publish and manage their listings, while signed-in creators can manage bookings and save favorite studios.
+**Discover. Create. Collaborate.**
 
-## Live site
+Framio is a creative studio marketplace that connects creators with professional spaces for their next project. Filmmakers, photographers, podcasters, musicians, and other creators can discover and book studios, while hosts can publish and manage their creative spaces.
 
-**Live website:** `TODO: add the deployed client URL before submitting`
+Whether it is a photography studio, film stage, podcast lounge, music suite, or creative workshop, Framio makes finding and managing creative spaces simple and convenient.
 
-The repository currently has no configured production URL. Replace this placeholder with the public client URL after deployment.
+## Live Demo & Repositories
 
-## Project repositories
+| Resource | Link |
+|---|---|
+| **Live Application** | [Framio](https://framio-client.vercel.app) |
+| **Client Repository** | [framio-client](https://github.com/irfanhossaintanjid/framio-client) |
+| **Server Repository** | [framio-server](https://github.com/irfanhossaintanjid/framio-server) |
+| **Express API** | [Framio API](https://framio-server.vercel.app) |
 
-- **Client:** [irfanhossaintanjid/framio-client](https://github.com/irfanhossaintanjid/framio-client)
-- **Express server:** [irfanhossaintanjid/framio-server](https://github.com/irfanhossaintanjid/framio-server)
+## Key Features
 
-## Features
+- **Studio Discovery:** Browse and filter photography studios, film stages, podcast lounges, music suites, and creative workshops.
+- **Detailed Studio Profiles:** Explore studio images, specifications, amenities, host information, ratings, and reviews.
+- **Studio Management:** Create, update, and delete studio listings with server-side ownership verification.
+- **Booking Management:** Create reservations, manage booking requests, and track booking statuses through Pending, Confirmed, Cancelled, and Completed.
+- **Booking Availability:** Prevent overlapping reservations through server-side availability validation and unique booking-slot records in MongoDB.
+- **PDF Booking Invoices:** Generate and download PDF invoices for confirmed or completed reservations.
+- **Saved Studios:** Save favorite studios to a personal wishlist for easy access.
+- **Authentication & Security:** Support email/password authentication and Google sign-in with secure HTTPOnly session cookies.
+- **Responsive Interface:** Enjoy a consistent experience across desktop, tablet, and mobile devices.
+- **Modern User Experience:** Includes light and dark themes, loading skeletons, empty states, and interactive toast notifications.
 
-- Browse and filter studio listings, view studio details, amenities, host information, ratings, and reviews.
-- Create, edit, and delete studio listings; listing changes are restricted to the signed-in owner.
-- Make bookings with pending, confirmed, cancelled, and completed states, with overlapping time slots protected against double booking.
-- Download PDF invoices for confirmed or completed bookings.
-- Save favorite studios to a MongoDB-backed wishlist.
-- Use responsive layouts, light and dark themes, accessible loading states, friendly empty states, and toast notifications.
+## Technology Stack
 
-## Tech stack
+| Category | Technologies |
+|---|---|
+| **Frontend** | Next.js 16 (App Router), React 19, TypeScript |
+| **Styling & UI** | Tailwind CSS v4, Base UI, Lucide Icons |
+| **Animations & Slider** | Swiper |
+| **Authentication** | Better Auth, Google OAuth, HTTPOnly Cookies |
+| **Backend** | Node.js, Express.js 5 |
+| **Database** | MongoDB |
+| **PDF Generation** | jsPDF |
+| **Notifications** | React Toastify |
+| **Deployment** | Vercel |
 
-- Next.js 16 App Router, React 19, and TypeScript
-- Tailwind CSS v4 and Base UI components
-- Better Auth with email/password and Google sign-in
-- MongoDB for authentication, studios, bookings, and saved studios
-- Express 5 API for studio mutations and booking operations
-- React Toastify, Swiper, and jsPDF
+## Application Routes
 
-## Local setup
+| Route | Description | Access |
+|---|---|---|
+| `/` | Homepage with featured studios, categories, and platform overview | Public |
+| `/studios` | Explore, filter, and sort studio listings | Public |
+| `/studios/[id]` | View studio details, gallery, host information, and reviews | Public |
+| `/login` | User authentication | Public |
+| `/register` | Create a new account | Public |
+| `/add-studio` | Publish a new studio listing | Authenticated |
+| `/my-listings` | Manage personal studio listings | Authenticated |
+| `/studios/edit/[id]` | Update an owned studio listing | Owner only |
+| `/my-bookings` | Manage reservations and download invoices | Authenticated |
+| `/saved-studios` | View saved favorite studios | Authenticated |
 
-### Requirements
+## Project Architecture
 
-- Node.js compatible with the installed Next.js version
-- MongoDB database
-- The Framio Express server repository
-- Google OAuth credentials for Google sign-in (optional for local email/password use)
+Framio uses a separate Next.js client application and Express.js API, sharing MongoDB as the primary database.
 
-### 1. Configure the client
+**Client Application**
+- Built with Next.js App Router, React, and TypeScript.
+- Uses Better Auth for authentication and session management.
+- Next.js Route Handlers manage same-origin authentication, booking proxies, and studio/wishlist data access.
+- Communicates with the Express API for studio mutations and booking operations.
 
-From the client repository root, install dependencies and create `.env.local`:
+**Server Application**
+- Built with Express.js 5.
+- Handles studio management and booking operations.
+- Performs server-side ownership and authorization checks.
+- Uses MongoDB for persistent application data.
+- Validates booking availability to prevent overlapping reservations.
+
+## Getting Started
+
+Follow these instructions to run Framio locally.
+
+### Prerequisites
+
+- Node.js and npm compatible with Next.js 16.
+- MongoDB database (MongoDB Atlas recommended).
+- Google OAuth credentials for Google sign-in.
+- Git.
+
+### 1. Clone the Repositories
+
+Clone the client application:
 
 ```bash
+git clone https://github.com/irfanhossaintanjid/framio-client.git
+cd framio-client
 npm install
 ```
 
-Set the following variables in `.env.local`:
-
-```env
-MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>/<database>
-BETTER_AUTH_URL=http://localhost:3000
-BETTER_AUTH_SECRET=<generate-a-long-random-secret>
-NEXT_PUBLIC_API_URL=http://localhost:8000
-GOOGLE_CLIENT_ID=<google-oauth-client-id>
-GOOGLE_CLIENT_SECRET=<google-oauth-client-secret>
-```
-
-Use the same MongoDB cluster/database for the client and server so both parts read and write the same studio and booking data. Do not commit `.env.local` or real credentials.
-
-### 2. Configure and start the Express server
-
-In a second terminal, clone the server repository, install its dependencies, and create its `.env` file:
+Clone the server application in a separate terminal:
 
 ```bash
 git clone https://github.com/irfanhossaintanjid/framio-server.git
@@ -71,45 +103,128 @@ cd framio-server
 npm install
 ```
 
-Set these server variables in `framio-server/.env`:
+### 2. Environment Configuration
+
+Create a `.env.local` file in the **client root directory**:
 
 ```env
-MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>/<database>
+MONGODB_URI=your_mongodb_connection_string
+BETTER_AUTH_URL=http://localhost:3000
+BETTER_AUTH_SECRET=your_long_random_secret
+NEXT_PUBLIC_API_URL=http://localhost:8000
+GOOGLE_CLIENT_ID=your_google_oauth_client_id
+GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
+```
+
+Create a `.env` file in the **server root directory**:
+
+```env
+MONGODB_URI=your_mongodb_connection_string
 CLIENT_URL=http://localhost:3000
 PORT=8000
 ```
 
-Start the API:
+Use the same MongoDB database for both applications. Keep all credentials private and never commit environment files to GitHub.
+
+### 3. Start the Express API
+
+From the server directory:
 
 ```bash
 node index.js
 ```
 
-### 3. Start the client
+The API will run at:
 
-In the client repository terminal:
+```text
+http://localhost:8000
+```
+
+### 4. Start the Next.js Client
+
+From the client directory:
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Keep the client and server running together. Configure the Google OAuth callback URL to match your Better Auth setup if you want to test Google sign-in.
+Open the application:
 
-## Examiner test account
+```text
+http://localhost:3000
+```
 
-Create a dedicated test account in the deployed application and fill in these values before submitting:
+To test Google sign-in locally, configure the appropriate Google OAuth credentials and authorize the Better Auth callback URL.
 
-- **Email:** `TODO: add examiner test email`
-- **Password:** `TODO: add examiner test password`
+**Database Note:** Booking operations use MongoDB transactions. Use a MongoDB deployment that supports transactions, such as MongoDB Atlas or a properly configured replica set.
 
-Do not use a personal account or publish production secrets in this README.
+## Deployment
 
-## Useful commands
+Framio uses two separate Vercel deployments:
+
+- **Client:** `framio-client.vercel.app`
+- **Server:** `framio-server.vercel.app`
+
+Configure the following environment variables in the respective Vercel projects.
+
+**Client Environment Variables**
+
+```env
+BETTER_AUTH_URL=https://framio-client.vercel.app
+NEXT_PUBLIC_API_URL=https://framio-server.vercel.app
+MONGODB_URI=your_production_mongodb_connection_string
+BETTER_AUTH_SECRET=your_production_random_secret
+GOOGLE_CLIENT_ID=your_google_oauth_client_id
+GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
+```
+
+**Server Environment Variables**
+
+```env
+CLIENT_URL=https://framio-client.vercel.app
+MONGODB_URI=your_production_mongodb_connection_string
+```
+
+**Google OAuth Configuration**
+
+Add the following authorized redirect URI to your Google OAuth client:
+
+```text
+https://framio-client.vercel.app/api/auth/callback/google
+```
+
+After configuring the environment variables, redeploy both applications.
+
+## Available Scripts
+
+### Client
+
+| Command | Description |
+|---|---|
+| `npm run dev` | Start the development server |
+| `npm run build` | Build the production application |
+| `npm start` | Start the production server |
+| `npm run lint` | Run the configured lint checks |
+
+### TypeScript Check
 
 ```bash
-npm run dev
-npm run build
-npm start
-npm run lint
 npx tsc --noEmit --incremental false
 ```
+
+## Demo Account
+
+Create a dedicated account on the live application for evaluation purposes.
+
+| Credential | Value |
+|---|---|
+| **Email** | `YOUR_EXAMINER_TEST_EMAIL` |
+| **Password** | `YOUR_EXAMINER_TEST_PASSWORD` |
+
+Replace these placeholders with dedicated test account credentials before submitting the project. Do not use personal account credentials.
+
+---
+
+**Built with Next.js, Express.js, MongoDB, and TypeScript.**
+
+*Framio — A space for every creative idea.*
