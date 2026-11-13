@@ -38,7 +38,7 @@ const footerLinkClass =
 
 export function Footer() {
   return (
-    <footer className="mt-auto bg-[#071521] text-white dark:bg-[#102a43]">
+    <footer className="mt-15 bg-[#071521] text-white dark:bg-[#102a43]">
       <div className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_0.8fr_1fr_1.4fr] lg:gap-12">
           <div>

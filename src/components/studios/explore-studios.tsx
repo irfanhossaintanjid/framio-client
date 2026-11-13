@@ -21,8 +21,8 @@ import type {Studio} from "@/lib/types/page";
 type FilterKey = "all" | "photo" | "film" | "podcast" | "music" | "workshop";
 type SortKey = "rating" | "price-low" | "price-high" | "newest";
 
-const filters: Array<{ label: string; key: FilterKey; icon: LucideIcon }> = [
-  { label: "All Studios", key: "all", icon: CameraIcon },
+const filters: Array<{ label: string; key: FilterKey; icon?: LucideIcon }> = [
+  { label: "All Studios", key: "all" },
   { label: "Photo Studios", key: "photo", icon: CameraIcon },
   { label: "Film Stages", key: "film", icon: ClapperboardIcon },
   { label: "Podcast Rooms", key: "podcast", icon: Mic2Icon },
@@ -169,7 +169,7 @@ export function ExploreStudios() {
                   onClick={() => setFilter(key)}
                   className={`inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 ${active ? "bg-foreground text-background" : "bg-secondary text-foreground hover:bg-accent"}`}
                 >
-                  <Icon className="size-4" aria-hidden="true" />
+                  {Icon ? <Icon className="size-4" aria-hidden="true" /> : null}
                   {label}
                 </button>
               );
